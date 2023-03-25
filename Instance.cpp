@@ -210,3 +210,9 @@ void Instance::print_matrix() {
         cout << endl;
     }
 }
+int Instance::get_size() {
+    return size;
+}
+int** Instance::get_matrix() {
+    return matrix;
+}
