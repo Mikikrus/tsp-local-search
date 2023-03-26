@@ -17,7 +17,7 @@ int main() {
     auto elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
 
     std::cout << "Function took " << elapsedTime << " microseconds to execute." << std::endl;
-    Instance *x = new Instance("/home/mikikrus/CLionProjects/tsp-local-search/data/att48.tsp",true);
+    Instance *x = new Instance("/Users/maciej.filanowicz/tsp-local-search/data/att48.tsp",true);
 //    x->print_matrix();
 
     int *y = Solver::random(x, elapsedTime);

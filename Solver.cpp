@@ -38,12 +38,12 @@ void Solver::random_move(int solution[], std::mt19937 rng, std::uniform_int_dist
     }
 }
 
-int Solver::get_closest_node(int current_node, int *available_nodes, int** matrix) {
+int Solver::get_closest_node(int current_node,int available_nodes_size, int *available_nodes, int** matrix) {
     int min = matrix[current_node][available_nodes[0]];
     int closest_node = 0;
 
     //find the closes node which is different from current node
-    for (int i = 1; i < matrix[current_node][0]; i++) {
+    for (int i = 1; i < available_nodes_size; i++) {
         if (matrix[current_node][available_nodes[i]] < min && available_nodes[i] != current_node) {
             min = matrix[current_node][available_nodes[i]];
             closest_node = i;
@@ -83,31 +83,62 @@ int* Solver::random(Instance *instance, int running_time) {
     return solution;
 }
 
-//int* Solver::greedy(Instance *instance, int start) {
-//    int* solution = new int[instance->get_size()];
-//    int** matrix = instance->get_matrix();
-//
-//    int* available_nodes = get_available_nodes(start, instance->get_size());
-//
-//    //initialize solution
-//    current_node = start;
-//
-//
-//    //find the closest node to start
-////    int closest_node = get_closest_node(start, available_nodes, matrix);
-//
-////    //add the closest node to solution
-////    solution[1] = available_nodes[closest_node];
-////
-////    //remove the closest node from available nodes
-////    available_nodes[closest_node] = available_nodes[instance->get_size() - 1];
-////
-////    //find the closest node to the last added node
-////    for (int i = 2; i < instance->get_size(); i++) {
-////        closest_node = get_closest_node(solution[i - 1], available_nodes, matrix);
-////        solution[i] = available_nodes[closest_node];
-////        available_nodes[closest_node] = available_nodes[instance->get_size() - i];
-////    }
-//
-//    return solution;
-//}
+int* Solver::greedy(Instance *instance, int start) {
+    int* solution = new int[instance->get_size()];
+    int** matrix = instance->get_matrix();
+
+    int* available_nodes = get_available_nodes(start, instance->get_size());
+    int available_nodes_size = instance->get_size() - 1;
+    //initialize solution
+    solution[0] = start;
+    int current_node = start;
+
+    //start from one because we already have the starting node
+    for (int i = 1; i < instance->get_size(); i++) {
+        current_node = get_closest_node(current_node,available_nodes_size, available_nodes, matrix);
+        //add current_node to solution
+        solution[i] = available_nodes[current_node];
+        //decrease the available nodes size and swap the last element with the current node
+        available_nodes_size--;
+        std::swap(available_nodes[current_node], available_nodes[available_nodes_size]);
+    }
+
+    return solution;
+}
+
+int* Solver::two_opt(int* solution, int** matrix, int data_size) {
+    int best_cost = Solver::cost(solution, matrix, data_size);
+    int new_cost;
+    int* new_solution = new int[data_size];
+    for (int i = 0; i < data_size; i++) {
+        for (int j = i+1; j < data_size; j++) {
+            std::copy(solution, solution + data_size, new_solution);
+            std::reverse(new_solution + i, new_solution + j + 1);
+            new_cost = Solver::cost(new_solution, matrix, data_size);
+            if (new_cost < best_cost) {
+                best_cost = new_cost;
+                std::copy(new_solution, new_solution + data_size, solution);
+            }
+        }
+    }
+    return solution;
+}
+
+int* Solver::local_search(Instance *instance){
+    //create a random solution using Solver::random
+    int* solution = Solver::random(instance, 15);
+    int** matrix = instance->get_matrix();
+
+    for (int i= 0; i < instance->get_size(); i++) {
+        for (int j= 0; j < instance->get_size(); j++) {
+            if (i == j) continue;
+            //get distance between i and j
+
+
+//            std::swap(solution[i], solution[j]);
+//            std::reverse(solution + i, solution + j + 1);
+        }
+    }
+
+
+}
