@@ -20,7 +20,7 @@ Instance::Instance(string filename, bool parse_data_to_matrix)
     {
         if (StringFunctions::starts_with(line, "NAME"))
         {
-            name = StringFunctions::trim(StringFunctions::get_substring_after_char(line, ':'));
+            this->name = StringFunctions::trim(StringFunctions::get_substring_after_char(line, ':'));
         }
         else if (StringFunctions::starts_with(line, "COMMENT"))
         {
@@ -81,16 +81,11 @@ Instance::Instance(string filename, bool parse_data_to_matrix)
     coords = parse_coords(file, i, 2);
     if (is_instance_data_in_matrix)
     {
-        for (int j = 0; j < size; j++)
-        {
-            for (int k = 0; k < size; k++)
-            {
+        for (int j = 0; j < size; j++) {
+            for (int k = 0; k < size; k++) {
                 matrix[j][k] = calculate_distance(j, k);
             }
         }
-
-        for (int i = 0; i < size; i++) delete[] coords[i];
-        delete[] coords;
     }
 
 
