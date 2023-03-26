@@ -14,6 +14,8 @@ private:
     static int* shuffle(int n, std::mt19937 rng);
     static void random_move(int solution[], std::mt19937 rng, std::uniform_int_distribution<int> dis1,
                                            std::uniform_int_distribution<int> dis2, int n);
+    static void calculate_deltas(int solution[], int** matrix, int current_best[], int i, int j, int n);
+    static void calculate_special_deltas(int solution[], int** matrix, int current_best[], int i, int n);
     static int get_closest_node(int current_node,int available_nodes_size, int* available_nodes, int** matrix);
     static int* get_available_nodes(int current_node, int data_size);
 };
