@@ -106,39 +106,140 @@ int* Solver::greedy(Instance *instance, int start) {
     return solution;
 }
 
-int* Solver::two_opt(int* solution, int** matrix, int data_size) {
-    int best_cost = Solver::cost(solution, matrix, data_size);
-    int new_cost;
-    int* new_solution = new int[data_size];
-    for (int i = 0; i < data_size; i++) {
-        for (int j = i+1; j < data_size; j++) {
-            std::copy(solution, solution + data_size, new_solution);
-            std::reverse(new_solution + i, new_solution + j + 1);
-            new_cost = Solver::cost(new_solution, matrix, data_size);
-            if (new_cost < best_cost) {
-                best_cost = new_cost;
-                std::copy(new_solution, new_solution + data_size, solution);
+//int* Solver::two_opt(int* solution, int** matrix, int data_size) {
+//    int best_cost = Solver::cost(solution, matrix, data_size);
+//    int new_cost;
+//    int* new_solution = new int[data_size];
+//    for (int i = 0; i < data_size; i++) {
+//        for (int j = i+1; j < data_size; j++) {
+//            std::copy(solution, solution + data_size, new_solution);
+//            std::reverse(new_solution + i, new_solution + j + 1);
+//            new_cost = Solver::cost(new_solution, matrix, data_size);
+//            if (new_cost < best_cost) {
+//                best_cost = new_cost;
+//                std::copy(new_solution, new_solution + data_size, solution);
+//            }
+//        }
+//    }
+//    return solution;
+//}
+
+int* Solver::steepest(Instance *instance){
+    int iterations = 0;
+    //create a random solution using Solver::random
+    std::random_device rd;
+    std::mt19937 rng(rd());
+    int n = instance->get_size()-1;
+    int* solution = shuffle(instance->get_size(), rng);
+    int** matrix = instance->get_matrix();
+    int best_delta, best_i, best_j;
+    bool edge;
+    do {
+        iterations++;
+        best_delta = -1;
+        edge = false;
+        for (int i = 0; i < instance->get_size(); i++) {
+            for (int j = i + 2; j < instance->get_size() - 1; j++) {
+                // node exchange delta
+                int delta_current = matrix[solution[i]][solution[(i + 1) % instance->get_size()]]
+                                    + matrix[solution[i - 1 + instance->get_size()] % instance->get_size()][solution[i]]
+                                    + matrix[solution[j]][solution[(j + 1) % instance->get_size()]]
+                                    + matrix[solution[j - 1 + instance->get_size()] % instance->get_size()][solution[j]];
+
+                int delta_new = matrix[solution[i]][solution[(j + 1) % instance->get_size()]]
+                                + matrix[solution[(j - 1 + instance->get_size()) % instance->get_size()]][solution[i]]
+                                + matrix[solution[j]][solution[(i + 1) % instance->get_size()]]
+                                + matrix[solution[i - 1 + instance->get_size()] % instance->get_size()][solution[j]];
+                int improvement = delta_current - delta_new;
+                // edge exchange delta
+                delta_current = matrix[solution[(i - 1 + instance->get_size()) % instance->get_size()]][solution[i]]
+                                + matrix[solution[(j - 1 + instance->get_size()) % instance->get_size()]][solution[j]];
+                delta_new = matrix[solution[i]][solution[j]]
+                            + matrix[solution[(i - 1 + instance->get_size()) % instance->get_size()]][solution[
+                        (j - 1 + instance->get_size()) % instance->get_size()]];
+                if (delta_current - delta_new > improvement) {
+                    improvement = delta_current - delta_new;
+                    edge = true;
+                }
+                if (improvement > best_delta) {
+                    best_delta = improvement;
+                    best_i = i;
+                    best_j = j;
+                }
+
+
             }
         }
-    }
+        // special case: neighbors
+        // maybe i=0 outside?
+        for (int i = 0; i < instance->get_size() - 1; i++) {
+            int delta_current = matrix[solution[i - 1 + instance->get_size()] % instance->get_size()][solution[i]]
+                                + matrix[solution[i + 1]][solution[i + 2]% instance->get_size()];
+            int delta_new = matrix[solution[i + 2]% instance->get_size()][solution[i]]
+                            + matrix[solution[i - 1] % instance->get_size()][solution[i + 1]];
+            int improvement = delta_current - delta_new;
+            if (improvement > best_delta) {
+                best_delta = improvement;
+                best_i = i;
+                best_j = i + 1;
+                edge = false;
+            }
+        }
+        // special case: last node in list with every other except neighbors
+        int j = instance->get_size() - 1;
+        int j_with_neighbors_delta = matrix[solution[j]][solution[(j + 1) % instance->get_size()]]
+                                     +
+                                     matrix[solution[j - 1 + instance->get_size()] % instance->get_size()][solution[j]];
+        for (int i = 0; i < instance->get_size() - 2; i++) {
+            int delta_current = matrix[solution[i]][solution[(i + 1) % instance->get_size()]]
+                                + matrix[solution[i - 1 + instance->get_size()] % instance->get_size()][solution[i]]
+                                + j_with_neighbors_delta;
+
+            int delta_new = matrix[solution[i]][solution[(j + 1) % instance->get_size()]]
+                            + matrix[solution[(j - 1 + instance->get_size()) % instance->get_size()]][solution[i]]
+                            + matrix[solution[j]][solution[(i + 1) % instance->get_size()]]
+                            + matrix[solution[i - 1 + instance->get_size()] % instance->get_size()][solution[j]];
+            int improvement = delta_current - delta_new;
+            if (improvement > best_delta) {
+                best_delta = improvement;
+                best_i = i;
+                best_j = 0;
+                edge = false;
+            }
+        }
+        //
+        //TODO: special cases for edge exchange
+        //
+
+        // make moves
+        if (best_delta > 0) {
+            if (edge) {
+                std::swap(solution[best_i], solution[best_j]);
+            } else {
+                std::reverse(solution + best_i, solution + best_j + 1);
+            }
+        }
+    } while (best_delta > 0 && iterations < 100);
     return solution;
 }
-
-int* Solver::local_search(Instance *instance){
-    //create a random solution using Solver::random
-    int* solution = Solver::random(instance, 15);
-    int** matrix = instance->get_matrix();
-
-    for (int i= 0; i < instance->get_size(); i++) {
-        for (int j= 0; j < instance->get_size(); j++) {
-            if (i == j) continue;
-            //get distance between i and j
+// kod pythonowy do tego:
+//            a = order[move[1]-1]
+//            b = order[move[2]-1]
+//            old = distances[a][order[move[1]]] + distances[b][order[move[2]]]
+//            new = distances[a][b] + distances[order[move[1]]][order[move[2]]]
+//            if old - new > 0:
+//            out.append([old - new] + move)
 
 
 //            std::swap(solution[i], solution[j]);
 //            std::reverse(solution + i, solution + j + 1);
-        }
-    }
 
-
-}
+// python do special case edge exchange:
+//    if not best_move[0]:
+//    order[best_move[1]] = best_move[2]
+//    else:
+//    ind = sorted([best_move[1], best_move[2]])
+//    if ind[0] == 0:
+//    order = order[ind[1]-1::-1] + order[ind[1]:]
+//    else:
+//    order = order[:ind[0]] + order[ind[1]-1:ind[0]-1:-1] + order[ind[1]:]
