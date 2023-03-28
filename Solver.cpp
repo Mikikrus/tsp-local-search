@@ -15,7 +15,7 @@ int Solver::cost(int solution[], int** matrix, size_t data_size) {
     return cost;
 }
 
-int* Solver::shuffle(size_t n, std::mt19937 rng) {
+int* Solver::shuffle(int n, std::mt19937 rng) {
     int *nums = new int[n];
     std::iota(nums, nums + n, 0);
     for (int i = n-1; i >=0; --i) {
@@ -58,8 +58,8 @@ void Solver::calculate_deltas_node(const int solution[], int** matrix, int curre
     update_current_best(current_best, improvement, i, j, false);
 }
 
-void Solver::calculate_special_deltas(const int solution[], int** matrix, int current_best[], int i, size_t n) {
-    int j = (i + 1) % n;
+void Solver::calculate_special_deltas(const int solution[], int** matrix, int current_best[], int i, int j,size_t n) {
+    if (i == 0 && j == n-1) std::swap(i, j);
     int delta_current = matrix[solution[(i - 1 + n) % n]][solution[i]]
                         + matrix[solution[j]][solution[(j + 1)% n]];
     int delta_new = matrix[solution[(j + 1)% n]][solution[i]]
@@ -78,39 +78,107 @@ void Solver::calculate_deltas_edge(const int solution[], int** matrix, int curre
     update_current_best(current_best, improvement, i, j, true);
 }
 
-void Solver::random_move(int solution[], std::mt19937 rng, std::uniform_int_distribution<int> dis1,
-                                        std::uniform_int_distribution<int> dis2, size_t n) {
-    int i = dis1(rng); // 0 - n (n = instance.size() -1)
-    int j = dis2(rng); // 0 - n-1
-    if (i == j) i = n;
-    if (std::rand() % 2)
-        std::swap(solution[i], solution[j]); //can we use this or implement our own swap?
-    else {
-        std::reverse(solution + i, solution + j); //can we use this or implement our own reverse?
-    }
+int Solver::calculate_deltas_node(const int solution[], int** matrix, int i, int j, size_t n) {
+    int delta_current = matrix[solution[i]][solution[(i + 1) % n]]
+                        + matrix[solution[(i - 1 + n) % n]][solution[i]]
+                        + matrix[solution[j]][solution[(j + 1) % n]]
+                        + matrix[solution[(j - 1 + n) % n]][solution[j]];
+
+    int delta_new = matrix[solution[i]][solution[(j + 1) % n]]
+                    + matrix[solution[(j - 1 + n) % n]][solution[i]]
+                    + matrix[solution[j]][solution[(i + 1) % n]]
+                    + matrix[solution[(i - 1 + n) % n]][solution[j]];
+    return delta_current - delta_new;
 }
 
-int* Solver::random(Instance *instance, int running_time) {
+int Solver::calculate_special_deltas_random(const int *solution, int **matrix, int i, int j, size_t n) {
+    if (i == 0 && j == n-1) std::swap(i, j);
+    int delta_current = matrix[solution[(i - 1 + n) % n]][solution[i]]
+                        + matrix[solution[j]][solution[(j + 1)% n]];
+    int delta_new = matrix[solution[(j + 1)% n]][solution[i]]
+                    + matrix[solution[(i - 1 + n) % n]][solution[j]];
+    return delta_current - delta_new;
+}
+
+int Solver::calculate_deltas_edge(const int solution[], int** matrix, int i, int j, size_t n) {
+    int i_prev = solution[(i - 1 + n) % n];
+    int j_prev = solution[(j - 1 + n) % n];
+    int delta_current = matrix[i_prev][solution[i]] + matrix[j_prev][solution[j]];
+    int delta_new = matrix[solution[i]][solution[j]] + matrix[i_prev][j_prev];
+    return delta_current - delta_new;
+}
+
+//int Solver::random_move(int solution[], std::mt19937 rng, std::uniform_int_distribution<int> dis1,
+//                                        std::uniform_int_distribution<int> dis2, size_t n) {
+//    int i = dis1(rng); // 0 - n (n = instance.size() -1)
+//    int j = dis2(rng); // 0 - n-1
+//    if (i == j) i = n;
+//    if (i+1 == j) {
+//        break;
+//    if (std::rand() % 2)
+//        std::swap(solution[i], solution[j]); //can we use this or implement our own swap?
+//    else {
+//        std::reverse(solution + i, solution + j); //can we use this or implement our own reverse?
+//    }
+//}
+
+int* Solver::random_walk(Instance *instance, int running_time) {
     std::random_device rd;
     std::mt19937 rng(rd());
     std::srand(std::time(nullptr)); //idk if its ok for a coin toss, ctime is simpler so faster??
     int n = instance->get_size()-1;
     int* solution = shuffle(instance->get_size(), rng);
-    int iter = 0;
+    int cur_cost = Solver::cost(solution, instance->get_matrix(), instance->get_size());
+    cout << "Initial cost: " << cur_cost << endl;
+    int* best_solution = new int[instance->get_size()];
+    std::copy(solution, solution + instance->get_size(), best_solution);
+    int delta = 0, best_cost = cur_cost, iter = 0;
     // is this the most efficient way to do it? (initialized once instead of every iteration)
     std::uniform_int_distribution<int> dis1(0, n);
     std::uniform_int_distribution<int> dis2(0, n-1);
-    std::cout << "begin" << std::endl;
     auto endTime = std::chrono::steady_clock::now() + std::chrono::microseconds(running_time);
     while (std::chrono::steady_clock::now() < endTime) {
-        random_move(solution, rng, dis1, dis2, n);
+//        string move = "none";
+        int j = dis1(rng); // 0 - n (n = instance.size() -1)
+        int i = dis2(rng); // 0 - n-1
+        if (i == j) j = n;
+        if (j < i) std::swap(i, j);
+        if ((i+1 == j) || (i == 0 && j == n)) {
+            delta = calculate_special_deltas_random(solution, instance->get_matrix(), i, j,
+                                             instance->get_size());
+            std::swap(solution[i], solution[j]);
+//            move = "special";
+        }
+        else if (std::rand() % 2) {
+            delta = calculate_deltas_node(solution, instance->get_matrix(), i, j,
+                                          instance->get_size());
+            std::swap(solution[i], solution[j]); //can we use this or implement our own swap?
+//            move = "node";
+        }
+        else {
+            delta = calculate_deltas_edge(solution, instance->get_matrix(), i, j,
+                                          instance->get_size());
+            std::reverse(solution + i, solution + j); //can we use this or implement our own reverse?
+//            move = "edge";
+        }
+        cur_cost -= delta;
+//        if (cur_cost != cost(solution, instance->get_matrix(), instance->get_size())) {
+//            cout << i << ' ' << j << ' ' << instance->get_size() << endl;
+//            cout << cur_cost << ' ' << cost(solution, instance->get_matrix(), instance->get_size()) << endl;
+//            cout << "move: " << move << endl;
+//            break;
+//        }
+        if (cur_cost < best_cost) {
+            best_cost = cur_cost;
+            std::copy(solution, solution + instance->get_size(), best_solution);
+        }
         iter++;
     }
     std::cout << "iterations: " << iter << std::endl;
-    return solution;
+    return best_solution;
 }
 
-int* Solver::steepest(Instance *instance){
+int* Solver::steepest(Instance *instance) {
     std::random_device rd;
     std::mt19937 rng(rd());
     int* solution = shuffle(instance->get_size(), rng);
@@ -127,7 +195,7 @@ int* Solver::steepest(Instance *instance){
         // special case: neighbors
         // maybe i=0 outside?
         for (int i = 0; i < instance->get_size() - 1; i++) {
-            calculate_special_deltas(solution, matrix, current_best, i, instance->get_size());
+            calculate_special_deltas(solution, matrix, current_best, i, i+1, instance->get_size());
         }
         // case: last node in list with every other except neighbors
         int j = instance->get_size() - 1;
@@ -153,7 +221,7 @@ int* Solver::steepest(Instance *instance){
     return solution;
 }
 
-int* Solver::greedy(Instance *instance){
+int* Solver::greedy(Instance *instance) {
     std::random_device rd;
     std::mt19937 rng(rd());
     int* solution = shuffle(instance->get_size(), rng);
@@ -193,7 +261,7 @@ int* Solver::greedy(Instance *instance){
             if (neighbor[2])
                 calculate_deltas_edge(solution, matrix, current_best, neighbor[0], neighbor[1], instance->get_size());
             else if ((neighbor[0] + 1) % instance->get_size() == neighbor[1])
-                calculate_special_deltas(solution, matrix, current_best, neighbor[0], instance->get_size());
+                calculate_special_deltas(solution, matrix, current_best, neighbor[0], neighbor[1], instance->get_size());
             else
                 calculate_deltas_node(solution, matrix, current_best, neighbor[0], neighbor[1], instance->get_size());
             if (current_best[0] > 0) {
