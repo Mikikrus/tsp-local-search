@@ -83,7 +83,7 @@ int* Solver::random(Instance *instance, int running_time) {
     return solution;
 }
 
-int* Solver::greedy(Instance *instance, int start) {
+int* Solver::nearest_neighbour(Instance *instance, int start) {
     int* solution = new int[instance->get_size()];
     int** matrix = instance->get_matrix();
 

@@ -6,7 +6,7 @@ class Solver
 {
 public:
     static int cost(int solution[], int** matrix, int data_size);
-    static int* greedy(Instance* instance, int start);
+    static int* nearest_neighbour(Instance* instance, int start);
     static int* random(Instance* instance, int running_time);
     static int* steepest(Instance* instance);
 private:
