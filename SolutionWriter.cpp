@@ -56,13 +56,8 @@ void SolutionWriter::write_solution()
     cout<<this->destination_filename<<endl;
     cout<< instance->get_size()<<endl;
     file.open(this->destination_filename);
-    string optimal_node;
-    string node;
-    string node_index;
-    string elapsed_time;
-    string x_coor;
-    string y_coor;
-    string file_header = "node_index,x_coor,y_corr,optimal_order,";
+    string optimal_node, node, node_index, elapsed_time, x_coord, y_coord;
+    string file_header = "node_index,x_coord,y_corr,optimal_order,";
     for (int i = 0; i < this->number_of_appended_solutions; i++) {
         file_header += "calculated_order_" + std::to_string(i) + ",";
     }
@@ -70,13 +65,13 @@ void SolutionWriter::write_solution()
     for (int i = 0; i < instance->get_size(); i++)
     {
         optimal_node = std::to_string(this->optimal_solution[i]);
-        x_coor = std::to_string(instance->coords[i][0]);
-        y_coor = std::to_string(instance->coords[i][1]);
+        x_coord = std::to_string(instance->coords[i][0]);
+        y_coord = std::to_string(instance->coords[i][1]);
         node_index = std::to_string(i);
         for (int j = 0; j < this->number_of_appended_solutions; j++) {
             node += std::to_string(this->calculated_solutions[i][j]) + ",";
         }
-        file << node_index + "," + x_coor + "," + y_coor + "," + optimal_node + "," + node << endl;
+        file << node_index + "," + x_coord + "," + y_coord + "," + optimal_node + "," + node << endl;
         node = "";
 
     }
