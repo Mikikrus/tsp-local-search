@@ -321,7 +321,7 @@ std::tuple<int*, int> Solver::greedy(Instance *instance, SolutionWriter* solutio
     return std::make_tuple(solution, c);
 }
 
-int* Solver::nearest_neighbour(Instance *instance, int start) {
+std::tuple<int*, int> Solver::nearest_neighbour(Instance *instance, int start) {
     int* solution = new int[instance->get_size()];
     int** matrix = instance->get_matrix();
 
@@ -341,5 +341,5 @@ int* Solver::nearest_neighbour(Instance *instance, int start) {
         std::swap(available_nodes[current_node], available_nodes[available_nodes_size]);
     }
 
-    return solution;
+    return std::make_tuple(solution, instance->get_size());
 }

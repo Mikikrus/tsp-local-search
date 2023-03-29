@@ -10,7 +10,7 @@ public:
     static std::tuple<int*, int> random_walk(Instance* instance, int running_time, SolutionWriter* solution_writer);
     static std::tuple<int*, int> greedy(Instance* instance, SolutionWriter* solution_writer);
     static std::tuple<int*, int> steepest(Instance* instance, SolutionWriter* solution_writer);
-    static int* nearest_neighbour(Instance *instance, int start);
+    static std::tuple<int*, int> nearest_neighbour(Instance *instance, int start);
 private:
     static mt19937 get_rng();
     static int* shuffle(int n, std::mt19937& rng);
