@@ -5,10 +5,13 @@
 class Solver {
 public:
     static int cost(int solution[], int** matrix, size_t data_size);
+    static int* random_search(Instance* instance, int running_time);
     static int* random_walk(Instance* instance, int running_time);
+    static int* not_random_search(Instance* instance, int running_time);
     static int* greedy(Instance* instance);
     static int* steepest(Instance* instance);
 private:
+    static mt19937 get_rng();
     static int* node_exchange(int solution[], int** matrix, size_t data_size, bool is_greedy);
     static int* shuffle(int n, std::mt19937 rng);
     static void shuffle(int combinations[][3], int total_count, std::mt19937 rng);

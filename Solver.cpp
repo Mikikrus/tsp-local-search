@@ -3,8 +3,22 @@
 #include <chrono>
 #include <ctime>
 #include <algorithm>
+#include <thread>
 
 //Solver::Solver() : rng(std::random_device()()) {}
+mt19937 Solver::get_rng() {
+    std::random_device rd;
+    if (rd.entropy() != 0) {
+        // initialize some generator like mt19937 with rd()
+        std::mt19937 rng(rd());
+        return rng;
+    }
+    else {
+        // use another seed generator (for example, time in milliseconds)
+        std::mt19937 rng(std::chrono::system_clock::now().time_since_epoch().count());
+        return rng;
+    }
+}
 
 int Solver::cost(int solution[], int** matrix, size_t data_size) {
     int cost = 0;
@@ -36,9 +50,10 @@ void update_current_best(int current_best[], int improvement, int i, int j, bool
 }
 //template<typename T, std::size_t N, std::size_t M>
 void Solver::shuffle(int combinations[][3], int total_count, std::mt19937 rng) {
+    std::mt19937 rng2(std::chrono::system_clock::now().time_since_epoch().count());
     for (int i = total_count-1; i >=0; --i) {
         std::uniform_int_distribution<> dis(0, i);
-        int j = dis(rng);
+        int j = dis(rng2);
         std::swap(combinations[i], combinations[j]);
     }
 }
@@ -121,11 +136,54 @@ int Solver::calculate_deltas_edge(const int solution[], int** matrix, int i, int
 //        std::reverse(solution + i, solution + j); //can we use this or implement our own reverse?
 //    }
 //}
+//TODO: what the fuck?
+int* Solver::random_search(Instance *instance, int running_time) {
+    mt19937 rng = get_rng();
+    int score, best_score = 2147483647; //INT_MAX
+    int* best_solution;
+    auto endTime = std::chrono::steady_clock::now() + std::chrono::microseconds(running_time);
+//    cout << Solver::cost(shuffle(instance->get_size(), rng), instance->get_matrix(), instance->get_size()) << endl;
+    while (std::chrono::steady_clock::now() < endTime) {
+        int* solution = shuffle(instance->get_size(), rng);
+        cout << Solver::cost(solution, instance->get_matrix(), instance->get_size()) << endl;
+        if (score = Solver::cost(solution, instance->get_matrix(), instance->get_size()); score < best_score) {
+            best_score = score;
+            best_solution = solution;
+        }
+    }
+    return best_solution;
+}
+
+int* Solver::not_random_search(Instance *instance, int running_time) {
+    mt19937 rng = get_rng();
+    int x=0;
+    while (x < 99) {
+        int* solution = shuffle(instance->get_size(), rng);
+        cout << Solver::cost(solution, instance->get_matrix(), instance->get_size()) << endl;
+        x++;
+    }
+    cout << "====" << endl;
+    return shuffle(instance->get_size(), rng);
+}
 
 int* Solver::random_walk(Instance *instance, int running_time) {
-    std::random_device rd;
-    std::mt19937 rng(rd());
     std::srand(std::time(nullptr)); //idk if its ok for a coin toss, ctime is simpler so faster??
+//    mt19937 rng = get_rng();
+    std::mt19937 rng(std::chrono::system_clock::now().time_since_epoch().count());
+    int x=0;
+//    std::this_thread::sleep_for(std::chrono::milliseconds (10));
+
+//eliminate this shit
+    while (x < 99) {
+
+        int* solution = shuffle(instance->get_size(), rng);
+        cout << Solver::cost(solution, instance->get_matrix(), instance->get_size()) << endl;
+        x++;
+    }
+    cout << "====" << endl;
+
+
+//    return shuffle(instance->get_size(), rng);
     int n = instance->get_size()-1;
     int* solution = shuffle(instance->get_size(), rng);
     int cur_cost = Solver::cost(solution, instance->get_matrix(), instance->get_size());
@@ -133,11 +191,13 @@ int* Solver::random_walk(Instance *instance, int running_time) {
     int* best_solution = new int[instance->get_size()];
     std::copy(solution, solution + instance->get_size(), best_solution);
     int delta = 0, best_cost = cur_cost, iter = 0;
-    // is this the most efficient way to do it? (initialized once instead of every iteration)
     std::uniform_int_distribution<int> dis1(0, n);
     std::uniform_int_distribution<int> dis2(0, n-1);
     auto endTime = std::chrono::steady_clock::now() + std::chrono::microseconds(running_time);
     while (std::chrono::steady_clock::now() < endTime) {
+
+        int* test = shuffle(instance->get_size(), rng);
+//        cout << Solver::cost(test, instance->get_matrix(), instance->get_size()) << endl;
 //        string move = "none";
         int j = dis1(rng); // 0 - n (n = instance.size() -1)
         int i = dis2(rng); // 0 - n-1
@@ -162,6 +222,7 @@ int* Solver::random_walk(Instance *instance, int running_time) {
 //            move = "edge";
         }
         cur_cost -= delta;
+
 //        if (cur_cost != cost(solution, instance->get_matrix(), instance->get_size())) {
 //            cout << i << ' ' << j << ' ' << instance->get_size() << endl;
 //            cout << cur_cost << ' ' << cost(solution, instance->get_matrix(), instance->get_size()) << endl;
@@ -174,13 +235,13 @@ int* Solver::random_walk(Instance *instance, int running_time) {
         }
         iter++;
     }
+
     std::cout << "iterations: " << iter << std::endl;
     return best_solution;
 }
 
 int* Solver::steepest(Instance *instance) {
-    std::random_device rd;
-    std::mt19937 rng(rd());
+    mt19937 rng = get_rng();
     int* solution = shuffle(instance->get_size(), rng);
     int** matrix = instance->get_matrix();
     int current_best[4];
@@ -222,8 +283,7 @@ int* Solver::steepest(Instance *instance) {
 }
 
 int* Solver::greedy(Instance *instance) {
-    std::random_device rd;
-    std::mt19937 rng(rd());
+    mt19937 rng = get_rng();
     int* solution = shuffle(instance->get_size(), rng);
     int** matrix = instance->get_matrix();
     size_t total_count = (instance->get_size()*(instance->get_size()-1)
