@@ -19,7 +19,7 @@ int main() {
             "kroC100.tsp",
             "kroD100.tsp",
             "pr76.tsp",
-            "rd100.tsp",
+            "tsp225.tsp",
             "st70.tsp"
     };
     int number_of_runs = 10;
@@ -32,6 +32,7 @@ int main() {
         for (int j =0; j < number_of_runs; j++) {
             auto startTime = std::chrono::steady_clock::now();
             int* solution = Solver::greedy(instance,solution_writer);
+//            cout << "Max value: " << max_value << " Number of cities: " <<  instance->get_size()<<endl;
             auto endTime = std::chrono::steady_clock::now();
             auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds >(endTime - startTime).count();
             solution_writer->append_solution(solution,elapsedTime,"final_order", false);
