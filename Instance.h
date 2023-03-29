@@ -23,9 +23,10 @@ public:
     void print_matrix();
     int get_size();
     int** get_matrix();
+    string name;
+    double** coords;
 
 private:
-    double** coords;
     bool is_instance_data_in_matrix;
     int** matrix;
     int nint(double d);
