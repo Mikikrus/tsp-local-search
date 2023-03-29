@@ -1,58 +1,43 @@
 #include <iostream>
-#include "Instance.h"
-#include "Solver.h"
 #include <chrono>
 #include <thread>
 #include <algorithm>
 
+#include "Instance.h"
+#include "Solver.h"
+#include "SolutionWriter.h"
+
+
 
 int main() {
     std::cout << "Hello, World!" << std::endl;
-//    void shuffle(int combinations[][3], int total_count, std::mt19937 rng) {
-//        for (int i = total_count-1; i >=0; --i) {
-//            std::uniform_int_distribution<> dis(0, i);
-//            int j = dis(rng);
-//            std::swap(combinations[i], combinations[j]);
-//        }
-//    }
 
+    const char *instance_names[8] = {
+            "eil51.tsp",
+            "eil76.tsp",
+            "kroA100.tsp",
+            "kroC100.tsp",
+            "kroD100.tsp",
+            "pr76.tsp",
+            "rd100.tsp",
+            "st70.tsp"
+    };
+    int number_of_runs = 10;
+    string data_dir = "/Users/maciej.filanowicz/tsp-local-search/data/";
 
-//    mt19937 rng = get_rng();
-//    int x=0;
-//    while (x < 99) {
-//        int* solution = shuffle(instance->get_size(), rng);
-//        cout << Solver::cost(solution, instance->get_matrix(), instance->get_size()) << endl;
-//        x++;
-//    }
-//    cout << "====" << endl;
-    int a = 0;
-    auto startTime = std::chrono::steady_clock::now();
-    for (int i = 0; i <1; i++) {
-        std::this_thread::sleep_for(std::chrono::milliseconds (10));
+    for (auto & instance_name : instance_names) {
+        cout << "Instance: " << instance_name << endl;
+        auto *instance = new Instance(data_dir + std::string(instance_name), true);
+        auto *solution_writer = new SolutionWriter(instance, data_dir,"greedy", number_of_runs);
+        for (int j =0; j < number_of_runs; j++) {
+            auto startTime = std::chrono::steady_clock::now();
+            int* solution = Solver::greedy(instance,solution_writer);
+            auto endTime = std::chrono::steady_clock::now();
+            auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds >(endTime - startTime).count();
+            solution_writer->append_solution(solution,elapsedTime,"final_order", false);
+        }
+        solution_writer->print_summary();
+        solution_writer->write_solution();
     }
-    auto endTime = std::chrono::steady_clock::now();
-    auto elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
-//
-//    std::cout << "Function took " << elapsedTime << " microseconds to execute." << std::endl;
-//    Instance *x = new Instance("/Users/maciej.filanowicz/tsp-local-search/data/att48.tsp",true);
-    Instance *x = new Instance("/home/mikikrus/CLionProjects/tsp-local-search/data/rd100.tsp",true);
-//    x->print_matrix();
-    int* y = Solver::random_walk(x, elapsedTime);
-//    int* y = Solver::not_random_search(x, elapsedTime);
-
-//    int* y = Solver::greedy(x);
-//    auto startTime = std::chrono::steady_clock::now();
-//    for (int i = 0; i <10; i++) {
-//        y = Solver::steepest(x);
-//    }
-//    auto endTime = std::chrono::steady_clock::now();
-//    auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds >(endTime - startTime).count() / 10;
-//    cout << "Average Time: " << elapsedTime << " miliseconds" <<endl;
-
-    for (int i = 0; i < x->get_size(); i++) {
-        std::cout << y[i] << " ";
-    }
-    std::cout << std::endl << "Cost: " << Solver::cost(y, x->get_matrix(), x->get_size()) << std::endl;
-    std::cout << "Optimal cost: " << x->optimal_tour_length << std::endl; //TODO: load/calculate optimal tour length
     return 0;
 }

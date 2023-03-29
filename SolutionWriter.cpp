@@ -7,10 +7,11 @@ SolutionWriter::SolutionWriter(Instance* instance, const string& dest_dir, strin
     this->instance = instance;
     this->dest_dir = dest_dir;
     this->destination_filename = dest_dir +algorithm_name+"_"+ instance->name + ".sol";
-    this->number_of_runs = number_of_runs;
+    this->number_of_runs = number_of_runs*2;
     this->calculated_solutions = new int* [this->instance->get_size()];
-    for (int i = 0; i < this->instance->get_size(); i++) this->calculated_solutions [i] = new int[number_of_runs];
-    this->time_table = new long long[number_of_runs];
+    for (int i = 0; i < this->instance->get_size(); i++) this->calculated_solutions [i] = new int[this->number_of_runs];
+    this->time_table = new long long[this->number_of_runs];
+    this->run_names = new string[this->number_of_runs];
     this->optimal_solution = get_optimal_solution(dest_dir+instance->name+".opt.tour");
 }
 
@@ -41,12 +42,20 @@ int* SolutionWriter::get_optimal_solution(string optimal_solution_path)
     file.close();
     return solution;
 }
-void SolutionWriter::append_solution(int* solution, long long elapsed_time){
+void SolutionWriter::append_solution(int* solution, long long elapsed_time, string run_name,bool initial_solution){
     for (int i = 0; i < this->instance->get_size(); i++) {
 
         this->calculated_solutions[i][this->number_of_appended_solutions] = solution[i];
     }
     this->time_table[this->number_of_appended_solutions] = elapsed_time;
+    this->time_table[this->number_of_appended_solutions] = elapsed_time;
+    string run_id;
+    if (!initial_solution) {
+       run_id = std::to_string(this->number_of_appended_solutions-1);
+    }else{
+        run_id = std::to_string(this->number_of_appended_solutions);
+    }
+    this->run_names[this->number_of_appended_solutions] = run_name  + run_id;
     this->number_of_appended_solutions++;
 }
 
@@ -59,7 +68,7 @@ void SolutionWriter::write_solution()
     string optimal_node, node, node_index, elapsed_time, x_coord, y_coord;
     string file_header = "node_index,x_coord,y_corr,optimal_order,";
     for (int i = 0; i < this->number_of_appended_solutions; i++) {
-        file_header += "calculated_order_" + std::to_string(i) + ",";
+        file_header += this->run_names[i] + ",";
     }
     file << file_header << endl;
     for (int i = 0; i < instance->get_size(); i++)

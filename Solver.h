@@ -1,15 +1,17 @@
 #pragma once
 #include "Instance.h"
+#include "SolutionWriter.h"
 #include <random>
 //template<typename T, std::size_t N, std::size_t M>
 class Solver {
 public:
     static int cost(int solution[], int** matrix, size_t data_size);
-    static int* random_search(Instance* instance, int running_time);
-    static int* random_walk(Instance* instance, int running_time);
-    static int* not_random_search(Instance* instance, int running_time);
-    static int* greedy(Instance* instance);
-    static int* steepest(Instance* instance);
+    static int* random_search(Instance* instance, int running_time, SolutionWriter* solution_writer);
+    static int* random_walk(Instance* instance, int running_time, SolutionWriter* solution_writer);
+    static int* not_random_search(Instance* instance, int running_time, SolutionWriter* solution_writer);
+    static int* greedy(Instance* instance, SolutionWriter* solution_writer);
+    static int* nearest_neighbour(Instance *instance, int start);
+    static int* steepest(Instance* instance, SolutionWriter* solution_writer);
 private:
     static mt19937 get_rng();
     static int* node_exchange(int solution[], int** matrix, size_t data_size, bool is_greedy);

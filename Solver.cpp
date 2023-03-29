@@ -137,7 +137,7 @@ int Solver::calculate_deltas_edge(const int solution[], int** matrix, int i, int
 //    }
 //}
 //TODO: what the fuck?
-int* Solver::random_search(Instance *instance, int running_time) {
+int* Solver::random_search(Instance *instance, int running_time, SolutionWriter* solution_writer) {
     mt19937 rng = get_rng();
     int score, best_score = 2147483647; //INT_MAX
     int* best_solution;
@@ -154,7 +154,7 @@ int* Solver::random_search(Instance *instance, int running_time) {
     return best_solution;
 }
 
-int* Solver::not_random_search(Instance *instance, int running_time) {
+int* Solver::not_random_search(Instance *instance, int running_time, SolutionWriter* solution_writer) {
     mt19937 rng = get_rng();
     int x=0;
     while (x < 99) {
@@ -166,7 +166,7 @@ int* Solver::not_random_search(Instance *instance, int running_time) {
     return shuffle(instance->get_size(), rng);
 }
 
-int* Solver::random_walk(Instance *instance, int running_time) {
+int* Solver::random_walk(Instance *instance, int running_time, SolutionWriter* solution_writer) {
     std::srand(std::time(nullptr)); //idk if its ok for a coin toss, ctime is simpler so faster??
 //    mt19937 rng = get_rng();
     std::mt19937 rng(std::chrono::system_clock::now().time_since_epoch().count());
@@ -240,9 +240,10 @@ int* Solver::random_walk(Instance *instance, int running_time) {
     return best_solution;
 }
 
-int* Solver::steepest(Instance *instance) {
+int* Solver::steepest(Instance *instance,SolutionWriter* solution_writer) {
     mt19937 rng = get_rng();
     int* solution = shuffle(instance->get_size(), rng);
+    solution_writer->append_solution(solution,0,"initial_solution",true);
     int** matrix = instance->get_matrix();
     int current_best[4];
     do {
@@ -282,9 +283,10 @@ int* Solver::steepest(Instance *instance) {
     return solution;
 }
 
-int* Solver::greedy(Instance *instance) {
+int* Solver::greedy(Instance *instance, SolutionWriter* solution_writer) {
     mt19937 rng = get_rng();
     int* solution = shuffle(instance->get_size(), rng);
+    solution_writer->append_solution(solution,0,"initial_solution",true);
     int** matrix = instance->get_matrix();
     size_t total_count = (instance->get_size()*(instance->get_size()-1)
                               + instance->get_size()*(instance->get_size()-3)) / 2;
@@ -334,5 +336,28 @@ int* Solver::greedy(Instance *instance) {
             }
         }
     } while(current_best[0] > 0);
+    return solution;
+}
+
+int* Solver::nearest_neighbour(Instance *instance, int start) {
+    int* solution = new int[instance->get_size()];
+    int** matrix = instance->get_matrix();
+
+    int* available_nodes = get_available_nodes(start, instance->get_size());
+    int available_nodes_size = instance->get_size() - 1;
+    //initialize solution
+    solution[0] = start;
+    int current_node = start;
+
+    //start from one because we already have the starting node
+    for (int i = 1; i < instance->get_size(); i++) {
+        current_node = get_closest_node(current_node,available_nodes_size, available_nodes, matrix);
+        //add current_node to solution
+        solution[i] = available_nodes[current_node];
+        //decrease the available nodes size and swap the last element with the current node
+        available_nodes_size--;
+        std::swap(available_nodes[current_node], available_nodes[available_nodes_size]);
+    }
+
     return solution;
 }
