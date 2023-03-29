@@ -3,7 +3,6 @@
 #include <chrono>
 #include <ctime>
 #include <algorithm>
-#include <thread>
 
 //Solver::Solver() : rng(std::random_device()()) {}
 mt19937 Solver::get_rng() {
@@ -147,38 +146,39 @@ int Solver::calculate_deltas_edge(const int solution[], int** matrix, int i, int
     return delta_current - delta_new;
 }
 
-int* Solver::random_search(Instance *instance, int running_time, SolutionWriter* solution_writer) {
+std::tuple<int*, int> Solver::random_search(Instance *instance, int running_time, SolutionWriter* solution_writer) {
     mt19937 rng = get_rng();
-    int score, best_score = 2147483647; //INT_MAX
+    int c=0, score, best_score = 2147483647; //INT_MAX
     int* best_solution;
     auto endTime = std::chrono::steady_clock::now() + std::chrono::microseconds(running_time);
 //    cout << Solver::cost(shuffle(instance->get_size(), rng), instance->get_matrix(), instance->get_size()) << endl;
     while (std::chrono::steady_clock::now() < endTime) {
+        c++;
         int* solution = shuffle(instance->get_size(), rng);
-        cout << Solver::cost(solution, instance->get_matrix(), instance->get_size()) << endl;
+//        cout << Solver::cost(solution, instance->get_matrix(), instance->get_size()) << endl;
         if (score = Solver::cost(solution, instance->get_matrix(), instance->get_size()); score < best_score) {
             best_score = score;
             best_solution = solution;
         }
     }
-    cout << "Best score: " << best_score << endl;
-    return best_solution;
+    return std::make_tuple(best_solution, c);
 }
 
-int* Solver::random_walk(Instance *instance, int running_time, SolutionWriter* solution_writer) {
+std::tuple<int*, int> Solver::random_walk(Instance *instance, int running_time, SolutionWriter* solution_writer) {
     std::srand(std::time(nullptr)); //idk if its ok for a coin toss, ctime is simpler so faster??
     mt19937 rng = get_rng();
     int n = instance->get_size()-1;
     int* solution = shuffle(instance->get_size(), rng);
     int cur_cost = Solver::cost(solution, instance->get_matrix(), instance->get_size());
-    cout << "Initial cost: " << cur_cost << endl;
+//    cout << "Initial cost: " << cur_cost << endl;
     int* best_solution = new int[instance->get_size()];
     std::copy(solution, solution + instance->get_size(), best_solution);
-    int delta = 0, best_cost = cur_cost, iter = 0;
+    int c = 0, delta = 0, best_cost = cur_cost;
     std::uniform_int_distribution<int> dis1(0, n);
     std::uniform_int_distribution<int> dis2(0, n-1);
     auto endTime = std::chrono::steady_clock::now() + std::chrono::microseconds(running_time);
     while (std::chrono::steady_clock::now() < endTime) {
+        c++;
 //        cout << Solver::cost(test, instance->get_matrix(), instance->get_size()) << endl;
 //        string move = "none";
         int j = dis1(rng); // 0 - n (n = instance.size() -1)
@@ -215,20 +215,19 @@ int* Solver::random_walk(Instance *instance, int running_time, SolutionWriter* s
             best_cost = cur_cost;
             std::copy(solution, solution + instance->get_size(), best_solution);
         }
-        iter++;
     }
-
-    std::cout << "iterations: " << iter << std::endl;
-    return best_solution;
+    return std::make_tuple(best_solution, c);
 }
 
-int* Solver::steepest(Instance *instance,SolutionWriter* solution_writer) {
+std::tuple<int*, int> Solver::steepest(Instance *instance,SolutionWriter* solution_writer) {
     mt19937 rng = get_rng();
     int* solution = shuffle(instance->get_size(), rng);
     solution_writer->append_solution(solution,0,"initial_solution",true);
     int** matrix = instance->get_matrix();
     int current_best[4];
+    int c = 0;
     do {
+        c++;
         current_best[0] = -1;
         for (int i = 0; i < instance->get_size(); i++) {
             for (int j = i + 2; j < instance->get_size() - 1; j++) {
@@ -262,10 +261,10 @@ int* Solver::steepest(Instance *instance,SolutionWriter* solution_writer) {
 //        for(int x=0; x<instance->get_size(); x++) cout << solution[x] << "->";
 //        cout << endl;
     } while (current_best[0] > 0);
-    return solution;
+    return std::make_tuple(solution, c);
 }
 
-int* Solver::greedy(Instance *instance, SolutionWriter* solution_writer) {
+std::tuple<int*, int> Solver::greedy(Instance *instance, SolutionWriter* solution_writer) {
     mt19937 rng = get_rng();
     int* solution = shuffle(instance->get_size(), rng);
     solution_writer->append_solution(solution,0,"initial_solution",true);
@@ -274,8 +273,9 @@ int* Solver::greedy(Instance *instance, SolutionWriter* solution_writer) {
                               + instance->get_size()*(instance->get_size()-3)) / 2;
     int combinations[total_count][3];
     int current_best[4];
-    int count;
+    int count, c = 0;
     do {
+        c++;
         count = 0;
         current_best[0] = -1;
         for (int i = 0; i < instance->get_size(); i++) {
@@ -318,7 +318,7 @@ int* Solver::greedy(Instance *instance, SolutionWriter* solution_writer) {
             }
         }
     } while(current_best[0] > 0);
-    return solution;
+    return std::make_tuple(solution, c);
 }
 
 int* Solver::nearest_neighbour(Instance *instance, int start) {
