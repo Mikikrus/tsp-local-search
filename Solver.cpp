@@ -29,6 +29,31 @@ int Solver::cost(int solution[], int** matrix, size_t data_size) {
     return cost;
 }
 
+int Solver::get_closest_node(int current_node,int available_nodes_size, int *available_nodes, int** matrix) {
+    int min = matrix[current_node][available_nodes[0]];
+    int closest_node = 0;
+
+    //find the closes node which is different from current node
+    for (int i = 1; i < available_nodes_size; i++) {
+        if (matrix[current_node][available_nodes[i]] < min && available_nodes[i] != current_node) {
+            min = matrix[current_node][available_nodes[i]];
+            closest_node = i;
+        }
+    }
+    return closest_node;
+}
+int* Solver::get_available_nodes(int current_node, int data_size){
+    int index = 0;
+    //available nodes are all nodes except current node
+    int* available_nodes = new int[data_size -1];
+    for (int i = 0; i < data_size; i++) {
+        if (i == current_node) continue;
+        available_nodes[index] = i;
+        index++;
+    }
+    return available_nodes;
+}
+
 int* Solver::shuffle(int n, std::mt19937 rng) {
     int *nums = new int[n];
     std::iota(nums, nums + n, 0);
