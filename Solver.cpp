@@ -54,7 +54,7 @@ int* Solver::get_available_nodes(int current_node, int data_size){
     return available_nodes;
 }
 
-int* Solver::shuffle(int n, std::mt19937 rng) {
+int* Solver::shuffle(int n, std::mt19937& rng) {
     int *nums = new int[n];
     std::iota(nums, nums + n, 0);
     for (int i = n-1; i >=0; --i) {
@@ -75,10 +75,9 @@ void update_current_best(int current_best[], int improvement, int i, int j, bool
 }
 //template<typename T, std::size_t N, std::size_t M>
 void Solver::shuffle(int combinations[][3], int total_count, std::mt19937 rng) {
-    std::mt19937 rng2(std::chrono::system_clock::now().time_since_epoch().count());
     for (int i = total_count-1; i >=0; --i) {
         std::uniform_int_distribution<> dis(0, i);
-        int j = dis(rng2);
+        int j = dis(rng);
         std::swap(combinations[i], combinations[j]);
     }
 }
@@ -148,20 +147,6 @@ int Solver::calculate_deltas_edge(const int solution[], int** matrix, int i, int
     return delta_current - delta_new;
 }
 
-//int Solver::random_move(int solution[], std::mt19937 rng, std::uniform_int_distribution<int> dis1,
-//                                        std::uniform_int_distribution<int> dis2, size_t n) {
-//    int i = dis1(rng); // 0 - n (n = instance.size() -1)
-//    int j = dis2(rng); // 0 - n-1
-//    if (i == j) i = n;
-//    if (i+1 == j) {
-//        break;
-//    if (std::rand() % 2)
-//        std::swap(solution[i], solution[j]); //can we use this or implement our own swap?
-//    else {
-//        std::reverse(solution + i, solution + j); //can we use this or implement our own reverse?
-//    }
-//}
-//TODO: what the fuck?
 int* Solver::random_search(Instance *instance, int running_time, SolutionWriter* solution_writer) {
     mt19937 rng = get_rng();
     int score, best_score = 2147483647; //INT_MAX
@@ -176,39 +161,13 @@ int* Solver::random_search(Instance *instance, int running_time, SolutionWriter*
             best_solution = solution;
         }
     }
+    cout << "Best score: " << best_score << endl;
     return best_solution;
-}
-
-int* Solver::not_random_search(Instance *instance, int running_time, SolutionWriter* solution_writer) {
-    mt19937 rng = get_rng();
-    int x=0;
-    while (x < 99) {
-        int* solution = shuffle(instance->get_size(), rng);
-        cout << Solver::cost(solution, instance->get_matrix(), instance->get_size()) << endl;
-        x++;
-    }
-    cout << "====" << endl;
-    return shuffle(instance->get_size(), rng);
 }
 
 int* Solver::random_walk(Instance *instance, int running_time, SolutionWriter* solution_writer) {
     std::srand(std::time(nullptr)); //idk if its ok for a coin toss, ctime is simpler so faster??
-//    mt19937 rng = get_rng();
-    std::mt19937 rng(std::chrono::system_clock::now().time_since_epoch().count());
-    int x=0;
-//    std::this_thread::sleep_for(std::chrono::milliseconds (10));
-
-//eliminate this shit
-    while (x < 99) {
-
-        int* solution = shuffle(instance->get_size(), rng);
-        cout << Solver::cost(solution, instance->get_matrix(), instance->get_size()) << endl;
-        x++;
-    }
-    cout << "====" << endl;
-
-
-//    return shuffle(instance->get_size(), rng);
+    mt19937 rng = get_rng();
     int n = instance->get_size()-1;
     int* solution = shuffle(instance->get_size(), rng);
     int cur_cost = Solver::cost(solution, instance->get_matrix(), instance->get_size());
@@ -220,8 +179,6 @@ int* Solver::random_walk(Instance *instance, int running_time, SolutionWriter* s
     std::uniform_int_distribution<int> dis2(0, n-1);
     auto endTime = std::chrono::steady_clock::now() + std::chrono::microseconds(running_time);
     while (std::chrono::steady_clock::now() < endTime) {
-
-        int* test = shuffle(instance->get_size(), rng);
 //        cout << Solver::cost(test, instance->get_matrix(), instance->get_size()) << endl;
 //        string move = "none";
         int j = dis1(rng); // 0 - n (n = instance.size() -1)
