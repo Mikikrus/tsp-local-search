@@ -12,10 +12,10 @@ using namespace std;
 class SolutionWriter
 {
 public:
-    SolutionWriter(Instance* instance, const string& dest_dir, string algorithm_name, int number_of_runs);
+    SolutionWriter(Instance* instance, const string& data_dir, const string& dest_dir, string algorithm_name, int number_of_runs);
     static int cost(int solution[], int** matrix);
     void write_solution();
-    void append_solution(int* solution,  long long elapsed_time, string run_name, bool initial_solution);
+    void append_solution(int* solution,  long long elapsed_time, string run_name, bool initial_solution, long long n_iterations);
     string destination_filename;
     string dest_dir;
     Instance* instance{};
@@ -25,6 +25,7 @@ public:
     string* run_names;
     int** calculated_solutions;
     long long* time_table;
+    long long* number_of_iterations;
     int number_of_runs;
     int number_of_appended_solutions = 0;
 };

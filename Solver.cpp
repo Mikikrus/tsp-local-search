@@ -222,7 +222,7 @@ std::tuple<int*, int> Solver::random_walk(Instance *instance, int running_time, 
 std::tuple<int*, int> Solver::steepest(Instance *instance,SolutionWriter* solution_writer) {
     mt19937 rng = get_rng();
     int* solution = shuffle(instance->get_size(), rng);
-    solution_writer->append_solution(solution,0,"initial_solution",true);
+    solution_writer->append_solution(solution,0,"initial_solution",true,0);
     int** matrix = instance->get_matrix();
     int current_best[4];
     int c = 0;
@@ -267,7 +267,7 @@ std::tuple<int*, int> Solver::steepest(Instance *instance,SolutionWriter* soluti
 std::tuple<int*, int> Solver::greedy(Instance *instance, SolutionWriter* solution_writer) {
     mt19937 rng = get_rng();
     int* solution = shuffle(instance->get_size(), rng);
-    solution_writer->append_solution(solution,0,"initial_solution",true);
+    solution_writer->append_solution(solution,0,"initial_solution",true, 0);
     int** matrix = instance->get_matrix();
     size_t total_count = (instance->get_size()*(instance->get_size()-1)
                               + instance->get_size()*(instance->get_size()-3)) / 2;
