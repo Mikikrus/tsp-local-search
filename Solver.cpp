@@ -8,12 +8,10 @@
 mt19937 Solver::get_rng() {
     std::random_device rd;
     if (rd.entropy() != 0) {
-        // initialize some generator like mt19937 with rd()
         std::mt19937 rng(rd());
         return rng;
     }
     else {
-        // use another seed generator (for example, time in milliseconds)
         std::mt19937 rng(std::chrono::system_clock::now().time_since_epoch().count());
         return rng;
     }
@@ -273,35 +271,35 @@ std::tuple<int*, int> Solver::greedy(Instance *instance, SolutionWriter* solutio
                               + instance->get_size()*(instance->get_size()-3)) / 2;
     int combinations[total_count][3];
     int current_best[4];
-    int count, c = 0;
-    do {
-        c++;
-        count = 0;
-        current_best[0] = -1;
-        for (int i = 0; i < instance->get_size(); i++) {
-            for (int j = i + 2; j < instance->get_size() - 1; j++) {
-                int row[3] = {i, j, 0};
-                std::copy(row, row+3, combinations[count++]);
-                row[2] = 1;
-                std::copy(row, row+3, combinations[count++]);
-            }
-        }
-        // special case: neighbors
-        for (int i = 0; i < instance->get_size(); i++) {
-            int row[3] = {i, (i + 1) % instance->get_size(), 0};
-            std::copy(row, row+3, combinations[count++]);
-        }
-        // case: last node in list with every other except neighbors
-        int j = instance->get_size() - 1;
-        for (int i = 1; i < instance->get_size() - 2; i++) {
+    int count, c = 0, ev = 0;
+    count = 0;
+    for (int i = 0; i < instance->get_size(); i++) {
+        for (int j = i + 2; j < instance->get_size() - 1; j++) {
             int row[3] = {i, j, 0};
             std::copy(row, row+3, combinations[count++]);
             row[2] = 1;
             std::copy(row, row+3, combinations[count++]);
         }
-//        cout << count << " " << total_count << endl;
+    }
+    // special case: neighbors
+    for (int i = 0; i < instance->get_size(); i++) {
+        int row[3] = {i, (i + 1) % instance->get_size(), 0};
+        std::copy(row, row+3, combinations[count++]);
+    }
+    // case: last node in list with every other except neighbors
+    int j = instance->get_size() - 1;
+    for (int i = 1; i < instance->get_size() - 2; i++) {
+        int row[3] = {i, j, 0};
+        std::copy(row, row+3, combinations[count++]);
+        row[2] = 1;
+        std::copy(row, row+3, combinations[count++]);
+    }
+    do {
+        c++;
+        current_best[0] = -1;
         shuffle(combinations, total_count, rng);
         for (auto& neighbor : combinations) {
+            ev++;
             if (neighbor[2])
                 calculate_deltas_edge(solution, matrix, current_best, neighbor[0], neighbor[1], instance->get_size());
             else if ((neighbor[0] + 1) % instance->get_size() == neighbor[1])
@@ -318,6 +316,7 @@ std::tuple<int*, int> Solver::greedy(Instance *instance, SolutionWriter* solutio
             }
         }
     } while(current_best[0] > 0);
+    cout << "greedy evaluated: " << ev << endl;
     return std::make_tuple(solution, c);
 }
 
@@ -340,6 +339,113 @@ std::tuple<int*, int> Solver::nearest_neighbour(Instance *instance, int start) {
         available_nodes_size--;
         std::swap(available_nodes[current_node], available_nodes[available_nodes_size]);
     }
-
     return std::make_tuple(solution, instance->get_size());
+}
+
+std::tuple<int*, int> Solver::deterministic_greedy(Instance *instance,SolutionWriter* solution_writer) {
+    mt19937 rng = get_rng();
+    int* solution = shuffle(instance->get_size(), rng);
+    solution_writer->append_solution(solution,0,"initial_solution",true, 0);
+    int** matrix = instance->get_matrix();
+    int current_best[4];
+    int c = 0;
+    do {
+        c++;
+        current_best[0] = -1;
+        for (int i = 0; i < instance->get_size(); i++) {
+            if (current_best[0] > 0) break;
+            for (int j = i + 2; j < instance->get_size() - 1; j++) {
+                if (current_best[0] > 0) break;
+                calculate_deltas_node(solution, matrix, current_best, i, j, instance->get_size());
+                if (current_best[0] > 0) break;
+                calculate_deltas_edge(solution, matrix, current_best, i, j, instance->get_size());
+            }
+        }
+        // special case: neighbors
+        // maybe i=0 outside?
+        for (int i = 0; i < instance->get_size() - 1; i++) {
+            if (current_best[0] > 0) break;
+            calculate_special_deltas(solution, matrix, current_best, i, i+1, instance->get_size());
+        }
+        // case: last node in list with every other except neighbors
+        int j = instance->get_size() - 1;
+        for (int i = 1; i < instance->get_size() - 2; i++) {
+            if (current_best[0] > 0) break;
+            calculate_deltas_node(solution, matrix, current_best, i, j, instance->get_size());
+            if (current_best[0] > 0) break;
+            calculate_deltas_edge(solution, matrix, current_best, i, j, instance->get_size());
+        }
+        // make moves
+//        int old_cost = cost(solution, matrix, instance->get_size());
+        if (current_best[0] > 0) {
+            if (!current_best[3]) {
+                std::swap(solution[current_best[1]], solution[current_best[2]]);
+            } else {
+                std::reverse(solution + current_best[1], solution + current_best[2]); //TODO: write our own
+            }
+        }
+//        for(auto i : current_best) cout << i << " ";
+//        cout << cost(solution, matrix, instance->get_size()) - old_cost << "\t\t";
+//        for(int x=0; x<instance->get_size(); x++) cout << solution[x] << "->";
+//        cout << endl;
+    } while (current_best[0] > 0);
+    return std::make_tuple(solution, c);
+}
+
+std::tuple<int*, int> Solver::deterministic_greedy_2(Instance *instance, SolutionWriter *solution_writer) {
+    mt19937 rng = get_rng();
+    int* solution = shuffle(instance->get_size(), rng);
+    solution_writer->append_solution(solution,0,"initial_solution",true, 0);
+    int** matrix = instance->get_matrix();
+    size_t total_count = (instance->get_size()*(instance->get_size()-1)
+                          + instance->get_size()*(instance->get_size()-3)) / 2;
+    int combinations[total_count][3];
+    int current_best[4];
+    int count, c = 0, ev = 0;
+    count = 0;
+    for (int i = 0; i < instance->get_size(); i++) {
+        for (int j = i + 2; j < instance->get_size() - 1; j++) {
+            int row[3] = {i, j, 0};
+            std::copy(row, row+3, combinations[count++]);
+            row[2] = 1;
+            std::copy(row, row+3, combinations[count++]);
+        }
+    }
+    // special case: neighbors
+    for (int i = 0; i < instance->get_size(); i++) {
+        int row[3] = {i, (i + 1) % instance->get_size(), 0};
+        std::copy(row, row+3, combinations[count++]);
+    }
+    // case: last node in list with every other except neighbors
+    int j = instance->get_size() - 1;
+    for (int i = 1; i < instance->get_size() - 2; i++) {
+        int row[3] = {i, j, 0};
+        std::copy(row, row+3, combinations[count++]);
+        row[2] = 1;
+        std::copy(row, row+3, combinations[count++]);
+    }
+    do {
+        c++;
+        current_best[0] = -1;
+//        shuffle(combinations, total_count, rng);
+        for (auto& neighbor : combinations) {
+            ev++;
+            if (neighbor[2])
+                calculate_deltas_edge(solution, matrix, current_best, neighbor[0], neighbor[1], instance->get_size());
+            else if ((neighbor[0] + 1) % instance->get_size() == neighbor[1])
+                calculate_special_deltas(solution, matrix, current_best, neighbor[0], neighbor[1], instance->get_size());
+            else
+                calculate_deltas_node(solution, matrix, current_best, neighbor[0], neighbor[1], instance->get_size());
+            if (current_best[0] > 0) {
+                if (!current_best[3]) {
+                    std::swap(solution[current_best[1]], solution[current_best[2]]);
+                } else {
+                    std::reverse(solution + current_best[1], solution + current_best[2]);
+                }
+                break;
+            }
+        }
+    } while(current_best[0] > 0);
+    cout << "greedy evaluated: " << ev << endl;
+    return std::make_tuple(solution, c);
 }
