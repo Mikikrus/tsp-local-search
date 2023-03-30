@@ -26,30 +26,18 @@ int Solver::cost(int solution[], int** matrix, size_t data_size) {
     return cost;
 }
 
-int Solver::get_closest_node(int current_node,int available_nodes_size, int *available_nodes, int** matrix) {
-    int min = matrix[current_node][available_nodes[0]];
-    int closest_node = 0;
 
-    //find the closes node which is different from current node
-    for (int i = 1; i < available_nodes_size; i++) {
-        if (matrix[current_node][available_nodes[i]] < min && available_nodes[i] != current_node) {
-            min = matrix[current_node][available_nodes[i]];
-            closest_node = i;
-        }
-    }
-    return closest_node;
-}
-int* Solver::get_available_nodes(int current_node, int data_size){
-    int index = 0;
-    //available nodes are all nodes except current node
-    int* available_nodes = new int[data_size -1];
-    for (int i = 0; i < data_size; i++) {
-        if (i == current_node) continue;
-        available_nodes[index] = i;
-        index++;
-    }
-    return available_nodes;
-}
+//int* Solver::get_available_nodes(int current_node, int data_size){
+//    int index = 0;
+//    //available nodes are all nodes except current node
+//    int* available_nodes = new int[data_size -1];
+//    for (int i = 0; i < data_size; i++) {
+//        if (i == current_node) continue;
+//        available_nodes[index] = i;
+//        index++;
+//    }
+//    return available_nodes;
+//}
 
 int* Solver::shuffle(int n, std::mt19937& rng) {
     int *nums = new int[n];
@@ -320,24 +308,42 @@ std::tuple<int*, int> Solver::greedy(Instance *instance, SolutionWriter* solutio
     return std::make_tuple(solution, c);
 }
 
+
+//int Solver::get_closest_node(int current_node,int available_nodes_size, int *available_nodes, int** matrix) {
+//
+//    return closest_node;
+//}
 std::tuple<int*, int> Solver::nearest_neighbour(Instance *instance, int start) {
     int* solution = new int[instance->get_size()];
     int** matrix = instance->get_matrix();
 
-    int* available_nodes = get_available_nodes(start, instance->get_size());
-    int available_nodes_size = instance->get_size() - 1;
+    int* available_nodes = new int[instance->get_size()];
+    for (int i = 0; i < instance->get_size(); i++) {
+        available_nodes[i] = i;
+    }
+    cout <<  instance->get_size()<< endl;
+
     //initialize solution
     solution[0] = start;
-    int current_node = start;
+    std::swap(available_nodes[start], available_nodes[instance->get_size() - 1]);
 
     //start from one because we already have the starting node
     for (int i = 1; i < instance->get_size(); i++) {
-        current_node = get_closest_node(current_node,available_nodes_size, available_nodes, matrix);
-        //add current_node to solution
-        solution[i] = available_nodes[current_node];
-        //decrease the available nodes size and swap the last element with the current node
-        available_nodes_size--;
-        std::swap(available_nodes[current_node], available_nodes[available_nodes_size]);
+        int closest_node_index = 0;
+        int min_distance = INT_MAX;
+        for (int j = 0; j < instance->get_size() - i; j++) {
+            if (matrix[solution[i-1]][available_nodes[j]] < min_distance) {
+                min_distance = matrix[solution[i-1]][available_nodes[j]];
+                closest_node_index = j;
+            }
+        }
+        solution[i] = available_nodes[closest_node_index];
+
+        std::swap(available_nodes[closest_node_index], available_nodes[instance->get_size() - i -1]);
+
+    }
+    for (int i = 0; i < instance->get_size(); i++) {
+        cout << solution[i] << ' ';
     }
     return std::make_tuple(solution, instance->get_size());
 }
