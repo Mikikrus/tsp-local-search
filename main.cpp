@@ -30,27 +30,25 @@ int main() {
     95.2,
     3413.25,
     63.45};
-    int number_of_runs = 10;
+    int number_of_runs = 200;
     string data_dir = "/Users/maciej.filanowicz/tsp-local-search/data/";
-    string destination_dir =  "/Users/maciej.filanowicz/tsp-local-search/predictions/";
-//    string data_dir = "/home/mikikrus/CLionProjects/tsp-local-search/data/";
-//    string destination_dir =  "/home/mikikrus/CLionProjects/tsp-local-search/predictions/";
+    string destination_dir =  "/Users/maciej.filanowicz/tsp-local-search/predictions3/";
 
     for (int i = 0; i < 8; i++) {
         cout << "Instance: " << instance_names[i] << endl;
         auto *instance = new Instance(data_dir + std::string(instance_names[i]), true);
-        auto *solution_writer = new SolutionWriter(instance,data_dir, destination_dir,"greedy", number_of_runs);
+        auto *solution_writer = new SolutionWriter(instance,data_dir, destination_dir,"tabu_search", number_of_runs);
         for (int j =0; j < number_of_runs; j++) {
             int iterations;
             int* solution;
             auto startTime = std::chrono::steady_clock::now();
 //            std::tie(solution, iterations) = Solver::greedy(instance,solution_writer);
+            std::tie(solution, iterations) = Solver::tabu_search(instance,solution_writer);
 //            std::tie(solution, iterations) = Solver::simulated_annealing(instance,solution_writer);
 //            std::tie(solution, iterations) = Solver::steepest(instance,solution_writer);
 //            std::tie(solution, iterations) = Solver::random_search(instance,running_times[i],solution_writer);
 //            std::tie(solution, iterations) = Solver::random_walk(instance,running_times[i],solution_writer);
 //            std::tie(solution, iterations) = Solver::nearest_neighbour(instance,i);
-            std::tie(solution, iterations) = Solver::tabu_search(instance,solution_writer);
             auto endTime = std::chrono::steady_clock::now();
             auto elapsedTime = std::chrono::duration_cast<std::chrono::microseconds >(endTime - startTime).count();
             solution_writer->append_solution(solution,elapsedTime,"final_order", false,iterations);
