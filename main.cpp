@@ -42,10 +42,12 @@ int main() {
             int iterations;
             int* solution;
             auto startTime = std::chrono::steady_clock::now();
-            std::tie(solution, iterations) = Solver::greedy(instance,solution_writer);
 //            std::tie(solution, iterations) = Solver::greedy(instance,solution_writer);
+            std::tie(solution, iterations) = Solver::simulated_annealing(instance,solution_writer);
+//            std::tie(solution, iterations) = Solver::steepest(instance,solution_writer);
 //            std::tie(solution, iterations) = Solver::random_search(instance,running_times[i],solution_writer);
 //            std::tie(solution, iterations) = Solver::random_walk(instance,running_times[i],solution_writer);
+//            std::tie(solution, iterations) = Solver::nearest_neighbour(instance,i);
             auto endTime = std::chrono::steady_clock::now();
             auto elapsedTime = std::chrono::duration_cast<std::chrono::microseconds >(endTime - startTime).count();
             solution_writer->append_solution(solution,elapsedTime,"final_order", false,iterations);

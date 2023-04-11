@@ -191,12 +191,6 @@ std::tuple<int*, int> Solver::random_walk(Instance *instance, int running_time, 
         }
         cur_cost -= delta;
 
-//        if (cur_cost != cost(solution, instance->get_matrix(), instance->get_size())) {
-//            cout << i << ' ' << j << ' ' << instance->get_size() << endl;
-//            cout << cur_cost << ' ' << cost(solution, instance->get_matrix(), instance->get_size()) << endl;
-//            cout << "move: " << move << endl;
-//            break;
-//        }
         if (cur_cost < best_cost) {
             best_cost = cur_cost;
             std::copy(solution, solution + instance->get_size(), best_solution);
@@ -204,6 +198,82 @@ std::tuple<int*, int> Solver::random_walk(Instance *instance, int running_time, 
     }
     return std::make_tuple(best_solution, c);
 }
+
+std::tuple<int*, int> Solver::simulated_annealing(Instance *instance, SolutionWriter* solution_writer) {
+    std::srand(std::time(nullptr)); //idk if its ok for a coin toss, ctime is simpler so faster??
+    mt19937 rng = get_rng();
+    int n = instance->get_size()-1;
+    int* solution = shuffle(instance->get_size(), rng);
+    int cur_cost = Solver::cost(solution, instance->get_matrix(), instance->get_size());
+//    cout << "Initial cost: " << cur_cost << endl;
+    int* best_solution = new int[instance->get_size()];
+    std::copy(solution, solution + instance->get_size(), best_solution);
+    int c = 0, delta = 0, best_cost = cur_cost;
+    std::uniform_int_distribution<int> dis1(0, n);
+    std::uniform_int_distribution<int> dis2(0, n-1);
+    std::uniform_real_distribution<double> probability(0, 1);
+
+
+    double initial_acceptance = 0.96;
+    double alpha = 0.9;
+    int L = 10 * n; // Markov chain length
+    int P = 10;
+    double T = -1.0 / log(initial_acceptance); // Starting temperature
+    double min_probability = 0.01;
+    double min_temperature = -1.0 / log(min_probability);
+    int no_improvement_counter = 0;
+    int iteration = 0;
+
+    while (T > min_temperature && no_improvement_counter < P * L) {
+        for (int k = 0; k < L; ++k) {
+            c++;
+//        cout << Solver::cost(test, instance->get_matrix(), instance->get_size()) << endl;
+//        string move = "none";
+            int j = dis1(rng); // 0 - n (n = instance.size() -1)
+            int i = dis2(rng); // 0 - n-1
+            if (i == j) j = n;
+            if (j < i) std::swap(i, j);
+            if ((i+1 == j) || (i == 0 && j == n)) {
+                delta = calculate_special_deltas_random(solution, instance->get_matrix(), i, j,
+                                                        instance->get_size());
+                if (delta > 0 || (probability(rng) < exp(-delta / T))) {
+                    std::swap(solution[i], solution[j]);
+                }
+//            move = "special";
+            }
+            else if (std::rand() % 2) {
+                delta = calculate_deltas_node(solution, instance->get_matrix(), i, j,
+                                              instance->get_size());
+                if (delta > 0 || (probability(rng) < exp(-delta / T))) {
+                    std::swap(solution[i], solution[j]);
+                }
+
+            }
+            else {
+                delta = calculate_deltas_edge(solution, instance->get_matrix(), i, j,
+                                              instance->get_size());
+                if (delta > 0 || (probability(rng) < exp(-delta / T))) {
+                    std::reverse(solution + i, solution + j); //can we use this or implement our own reverse?
+                }
+//            move = "edge";
+            }
+            cur_cost -= delta;
+            if (cur_cost < best_cost) {
+                best_cost = cur_cost;
+                std::copy(solution, solution + instance->get_size(), best_solution);
+                no_improvement_counter = 0;
+            } else {
+                no_improvement_counter++;
+            }
+
+        }
+        T *= alpha;
+        iteration += L;
+
+    }
+    return std::make_tuple(best_solution, c);
+}
+
 
 std::tuple<int*, int> Solver::steepest(Instance *instance,SolutionWriter* solution_writer) {
     mt19937 rng = get_rng();
@@ -341,9 +411,6 @@ std::tuple<int*, int> Solver::nearest_neighbour(Instance *instance, int start) {
 
         std::swap(available_nodes[closest_node_index], available_nodes[instance->get_size() - i -1]);
 
-    }
-    for (int i = 0; i < instance->get_size(); i++) {
-        cout << solution[i] << ' ';
     }
     return std::make_tuple(solution, instance->get_size());
 }

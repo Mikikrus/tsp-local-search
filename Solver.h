@@ -13,6 +13,7 @@ public:
     static std::tuple<int*, int> deterministic_greedy_2(Instance* instance, SolutionWriter* solution_writer);
     static std::tuple<int*, int> steepest(Instance* instance, SolutionWriter* solution_writer);
     static std::tuple<int*, int> nearest_neighbour(Instance *instance, int start);
+    static std::tuple<int*, int> simulated_annealing(Instance *instance, SolutionWriter *solution_writer);
 private:
     static mt19937 get_rng();
     static int* shuffle(int n, std::mt19937& rng);
