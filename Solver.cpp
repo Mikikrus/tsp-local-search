@@ -4,6 +4,7 @@
 #include <ctime>
 #include <algorithm>
 #include <climits>
+#include <cstring>
 
 //Solver::Solver() : rng(std::random_device()()) {}
 mt19937 Solver::get_rng() {
@@ -584,6 +585,9 @@ std::tuple<int*, int> Solver::tabu_search(Instance* instance, SolutionWriter* so
 
         void insert(int i, int j, int type) {
             // add (i,j) with type to the tabu list with tenure
+            if (i >= j) {
+                swap(i, j);
+            }
             tabuList[index(i, j)][type] = tenure;
         }
 
@@ -658,6 +662,26 @@ std::tuple<int*, int> Solver::tabu_search(Instance* instance, SolutionWriter* so
             numElements++;
 //        return;
         }
+        EliteCandidateList& operator=(const EliteCandidateList& other) {
+            if (this == &other) {
+                return *this;
+            }
+            delete[] node_a;
+            delete[] node_b;
+            delete[] neighborhood_type;
+            delete[] delta;
+            size = other.size;
+            numElements = other.numElements;
+            node_a = new int[size];
+            node_b = new int[size];
+            neighborhood_type = new int[size];
+            delta = new int[size];
+            memcpy(node_a, other.node_a, size * sizeof(int));
+            memcpy(node_b, other.node_b, size * sizeof(int));
+            memcpy(neighborhood_type, other.neighborhood_type, size * sizeof(int));
+            memcpy(delta, other.delta, size * sizeof(int));
+            return *this;
+        }
 
         EliteCandidateList recalculate_deltas() {
             // Recalculate the delta for each move
@@ -666,13 +690,11 @@ std::tuple<int*, int> Solver::tabu_search(Instance* instance, SolutionWriter* so
             for (int i = 0; i < numElements; i++) {
                 // Call an external method to recalculate the delta for this move
                 int new_delta = get_delta(node_a[i], node_b[i], neighborhood_type[i]);
-                cout << "=====" << endl;
-                cout << node_a[i] << " " << node_b[i] << " " << neighborhood_type[i] << " " << new_delta << endl;
+//                cout << "=====" << endl;
+//                cout << node_a[i] << " " << node_b[i] << " " << neighborhood_type[i] << " " << new_delta << endl;
                 if (new_delta >= threshold)
                     new_list.insert(node_a[i], node_b[i], neighborhood_type[i], new_delta);
-
             }
-            new_list.print();
 //            *this = new_list;
             return new_list;
         }
@@ -722,7 +744,7 @@ std::tuple<int*, int> Solver::tabu_search(Instance* instance, SolutionWriter* so
         }
     };
 
-    EliteCandidateList elite_list(elite_size);
+    static EliteCandidateList elite_list(elite_size);
     TabuList tabu_list(tabu_tenure, instance->get_size());
     int iter = 0, c = 0;
     int* best_solution = new int[instance->get_size()];
@@ -733,46 +755,59 @@ std::tuple<int*, int> Solver::tabu_search(Instance* instance, SolutionWriter* so
         tabu_list.decrementTabu();
         int current_best[4];
         bool found = elite_list.pop(current_best);
-        cout <<"xD" << endl;
-        cout << "current_best:" << current_best[0] << " " << current_best[1] << " " << current_best[2] << " " << current_best[3] << endl;
+//        cout << "current_best:" << current_best[0] << " " << current_best[1] << " " << current_best[2] << " " << current_best[3] << endl;
+//
+//        elite_list.pop(current_best);
+//        cout << "current_best:" << current_best[0] << " " << current_best[1] << " " << current_best[2] << " " << current_best[3] << endl;
 
-        elite_list.pop(current_best);
-        cout << "current_best:" << current_best[0] << " " << current_best[1] << " " << current_best[2] << " " << current_best[3] << endl;
-
-        cout << "found:" << found << endl;
+//        cout << "found:" << found << endl;
         if (found) {
-            cout << "current_best:" << current_best[0] << " " << current_best[1] << " " << current_best[2] << " " << current_best[3] << endl;
-            while(tabu_list.isTabu(solution[current_best[0]], solution[current_best[1]], current_best[2])) {
-                //TODO: aspiration criteria
-                if (!(found=elite_list.pop(current_best))) {
-                    goto not_found;
+//            cout << "current_best:" << current_best[0] << " " << current_best[1] << " " << current_best[2] << " " << current_best[3] << endl;
+            int *least_tabu = new int[4];
+            std::copy(current_best, current_best + 4, least_tabu);
+            int is_tabu;
+            int lowest_tabu = tabu_list.isTabu(solution[current_best[0]], solution[current_best[1]], current_best[2]);
+            while ((cur_eval - current_best[3] >= best_eval) &&
+                   (is_tabu = tabu_list.isTabu(solution[current_best[0]], solution[current_best[1]],
+                                               current_best[2]))) {
+                if (is_tabu < lowest_tabu) {
+                    std::copy(current_best, current_best + 4, least_tabu);
+                    lowest_tabu = is_tabu;
+                }
+                if (!(found = elite_list.pop(current_best))) {
+                    std::copy(least_tabu, least_tabu + 4, current_best);
+                    break;
                 }
             }
             c++;
-            cout << "actual cost" << cost(solution, instance->get_matrix(), instance->get_size()) << endl;
             if (!current_best[2]) {
                 std::swap(solution[current_best[0]], solution[current_best[1]]);
             } else {
                 std::reverse(solution + current_best[0], solution + current_best[1]);
             }
+
             cur_eval -= current_best[3];
-            elite_list.print();
+//            if (cost(solution, instance->get_matrix(), instance->get_size()) != cur_eval) {
+//                cout << "cost error" << endl;
+//                cout << cost(solution, instance->get_matrix(), instance->get_size()) << endl;
+//                cout << cur_eval << endl;
+//                cout << current_best[0] << current_best[1] << current_best[2] << current_best[3] << endl;
+//                throw;
+//            }
             EliteCandidateList newlist = elite_list.recalculate_deltas();
             elite_list = newlist;
-            cout << "outside" << endl;
-            elite_list.print();
+//            elite_list.print();
+//            cout << "outside" << endl;
+//            elite_list.print();
 
             if (cur_eval < best_eval) {
-                cout << cur_eval << endl;
-                cout << "actual cost" << cost(solution, instance->get_matrix(), instance->get_size()) << endl;
+//                cout << cur_eval << endl;
+//                cout << "actual cost" << cost(solution, instance->get_matrix(), instance->get_size()) << endl;
                 best_eval = cur_eval;
                 std::copy(solution, solution + instance->get_size(), best_solution);
-                if (best_eval < 0) {
-                    throw;
-                }
                 iter = 0;
             }
-            tabu_list.insert(current_best[1], current_best[2], current_best[3]);
+            tabu_list.insert(solution[current_best[0]], solution[current_best[1]], current_best[2]);
         }
         else {
             not_found:
@@ -787,7 +822,6 @@ std::tuple<int*, int> Solver::tabu_search(Instance* instance, SolutionWriter* so
                 }
             }
             // special case: neighbors
-            // maybe i=0 outside?
             for (int i = 0; i < instance->get_size() - 1; i++) {
                 delta = calculate_special_deltas(solution, instance->get_matrix(), i, i+1, instance->get_size());
                 elite_list.insert(i, i+1, 0, delta);
