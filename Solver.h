@@ -25,6 +25,4 @@ private:
     static int calculate_deltas_node(const int solution[], int** matrix, int i, int j, size_t n);
     static int calculate_special_deltas(const int solution[], int** matrix, int i, int j, size_t n);
     static int calculate_deltas_edge(const int solution[], int** matrix, int i, int j, size_t n);
-    static int get_closest_node(int current_node,int available_nodes_size, int* available_nodes, int** matrix);
-    static int* get_available_nodes(int current_node, int data_size);
 };

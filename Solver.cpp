@@ -28,19 +28,6 @@ int Solver::cost(int solution[], int** matrix, size_t data_size) {
     return cost;
 }
 
-
-//int* Solver::get_available_nodes(int current_node, int data_size){
-//    int index = 0;
-//    //available nodes are all nodes except current node
-//    int* available_nodes = new int[data_size -1];
-//    for (int i = 0; i < data_size; i++) {
-//        if (i == current_node) continue;
-//        available_nodes[index] = i;
-//        index++;
-//    }
-//    return available_nodes;
-//}
-
 int* Solver::shuffle(int n, std::mt19937& rng) {
     int *nums = new int[n];
     std::iota(nums, nums + n, 0);
@@ -380,11 +367,6 @@ std::tuple<int*, int> Solver::greedy(Instance *instance, SolutionWriter* solutio
     return std::make_tuple(solution, c);
 }
 
-
-//int Solver::get_closest_node(int current_node,int available_nodes_size, int *available_nodes, int** matrix) {
-//
-//    return closest_node;
-//}
 std::tuple<int*, int> Solver::nearest_neighbour(Instance *instance, int start) {
     int* solution = new int[instance->get_size()];
     int** matrix = instance->get_matrix();
@@ -750,7 +732,7 @@ std::tuple<int*, int> Solver::tabu_search(Instance* instance, SolutionWriter* so
     int* best_solution = new int[instance->get_size()];
     std::copy(solution, solution + instance->get_size(), best_solution);
 
-    while(iter < 500) {
+    while(iter < 15) {
         iter++;
         tabu_list.decrementTabu();
         int current_best[4];
@@ -838,131 +820,3 @@ std::tuple<int*, int> Solver::tabu_search(Instance* instance, SolutionWriter* so
     }
     return make_tuple(best_solution, c);
 }
-
-
-    // Initialize move iterators
-//    NodeSwapIterator node_swap_it(instance->get_size());
-//    EdgeSwapIterator edge_swap_it(instance->get_size());
-//
-//    // Initialize iteration counter and best solution
-//    int iter = 0;
-//    int* best_solution = new int[instance->get_size()];
-//    std::copy(solution, solution + instance->get_size(), best_solution);
-//
-//    // Main tabu search loop
-//    while (iter < 1000000) {  // Set a maximum number of iterations
-//        iter++;
-//
-//        // Initialize best neighbor and its evaluation
-//        int* best_neighbor = nullptr;
-//        int best_neighbor_eval = std::numeric_limits<int>::max();
-//
-//        // Iterate over all neighbors and find the best one
-//        for (auto& neighbor : node_swap_it) {
-//            // Apply move to current solution
-//            apply_node_swap(solution, neighbor);
-//
-//            // Compute the neighbor's evaluation
-//            int neighbor_eval = evaluate(solution, instance->get_matrix(), instance->get_size());
-//
-//            // Check if the move is tabu
-//            if (tabu_list.is_tabu(neighbor)) {
-//                // Check aspiration criteria
-//                if (neighbor_eval < best_eval) {
-//                    // Save the best neighbor found so far
-//                    best_neighbor = neighbor;
-//                    best_neighbor_eval = neighbor_eval;
-//                }
-//            } else {
-//                // Update elite list with non-tabu moves
-//                elite_list.add_candidate(neighbor, neighbor_eval);
-//
-//                // Save the best non-tabu neighbor found so far
-//                if (neighbor_eval < best_neighbor_eval) {
-//                    best_neighbor = neighbor;
-//                    best_neighbor_eval = neighbor_eval;
-//                }
-//            }
-//
-//            // Undo the move to the current solution
-//            apply_node_swap(solution, neighbor, true);
-//        }
-//
-//        for (auto& neighbor : edge_swap_it) {
-//            // Apply move to current solution
-//            apply_edge_swap(solution, neighbor);
-//
-//            // Compute the neighbor's evaluation
-//            int neighbor_eval = evaluate(solution, instance->get_matrix(), instance->get_size());
-//
-//            // Check if the move is tabu
-//            if (tabu_list.is_tabu(neighbor)) {
-//                // Check aspiration criteria
-//                if (neighbor_eval < best_eval) {
-//                    // Save the best neighbor found so far
-//                    best_neighbor = neighbor;
-//                    best_neighbor_eval = neighbor_eval;
-//                }
-//            } else {
-//                // Update elite list with non-tabu moves
-//                elite_list.add_candidate(neighbor, neighbor_eval);
-//
-//                // Save the best non-tabu neighbor found so far
-//                if (neighbor_eval < best_neighbor_eval) {
-//                    best_neighbor = neighbor;
-//                    best_neighbor_eval = neighbor_eval;
-//                }
-//            }
-//
-//            // Undo the move to the current solution
-//            apply_edge_swap(solution, neighbor, true);
-//        }
-//
-//        // If no non-tabu moves were found, select the least tabu move from the elite list
-//        if (!found_move) {
-//            int least_tabu_idx = -1;
-//            int least_tabu_value = INT_MAX;
-//            for (int i = 0; i < elite_list_size; i++) {
-//                if (tabu_list[elite_list[i][0]][elite_list[i][1]] < least_tabu_value) {
-//                    least_tabu_idx = i;
-//                    least_tabu_value = tabu_list[elite_list[i][0]][elite_list[i][1]];
-//                }
-//            }
-//            i = elite_list[least_tabu_idx][0];
-//            j = elite_list[least_tabu_idx][1];
-//            move_cost = elite_list[least_tabu_idx][2];
-//        }
-//
-//        // Update tabu list
-//        tabu_list[i][j] = tenure;
-//        // Update elite list
-//        update_elite_list(elite_list, elite_list_size, i, j, move_cost, MAX_ELITE_LIST_SIZE);
-//        // Update best solution if applicable
-//        if (move_cost < best_move_cost) {
-//            best_move_cost = move_cost;
-//            best_i = i;
-//            best_j = j;
-//            memcpy(best_solution, solution, sizeof(int)*instance->get_size());
-//        }
-//        // Make move
-//        make_move(solution, i, j, instance->get_size());
-//    }
-//
-//    // Update tabu tenure at the end of iteration
-//    tabu_tenure = max(1, tabu_tenure + tabu_tenure_delta);
-//
-//    if (best_move_cost < 0) {
-//        // Improvement found, reset aspiration criteria
-//        aspiration_best_cost = best_cost + best_move_cost - ASPIRATION_THRESHOLD;
-//        aspiration_worst_cost = best_cost + best_move_cost + ASPIRATION_THRESHOLD;
-//    } else if (best_move_cost == INT_MAX) {
-//        // No improving moves found, increment idle counter
-//        idle_iterations++;
-//    } else {
-//        // Non-improving move found, reset idle counter
-//        idle_iterations = 0;
-//    }
-//}
-//return make_tuple(best_solution, num_iterations);
-//}
-
