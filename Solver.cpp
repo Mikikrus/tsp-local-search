@@ -729,6 +729,9 @@ std::tuple<int*, int> Solver::tabu_search(Instance* instance, SolutionWriter* so
     static EliteCandidateList elite_list(elite_size);
     TabuList tabu_list(tabu_tenure, instance->get_size());
     int iter = 0, c = 0;
+    static int visited = 0;
+    const int NEIGHBORHOOD_SIZE = (instance->get_size()*(instance->get_size()-1)
+            + instance->get_size()*(instance->get_size()-3)) / 2;
     int* best_solution = new int[instance->get_size()];
     std::copy(solution, solution + instance->get_size(), best_solution);
 
@@ -776,7 +779,7 @@ std::tuple<int*, int> Solver::tabu_search(Instance* instance, SolutionWriter* so
 //                cout << current_best[0] << current_best[1] << current_best[2] << current_best[3] << endl;
 //                throw;
 //            }
-            EliteCandidateList newlist = elite_list.recalculate_deltas();
+            EliteCandidateList newlist = elite_list.recalculate_deltas(); // does it also count to evaluated solutions?
             elite_list = newlist;
 //            elite_list.print();
 //            cout << "outside" << endl;
@@ -816,7 +819,9 @@ std::tuple<int*, int> Solver::tabu_search(Instance* instance, SolutionWriter* so
                 delta = calculate_deltas_edge(solution, instance->get_matrix(), i, j, instance->get_size());
                 elite_list.insert(i, j, 1, delta);
             }
+            visited += NEIGHBORHOOD_SIZE;
         }
     }
+    cout << "evaluated solutions: " << visited << endl;
     return make_tuple(best_solution, c);
 }
