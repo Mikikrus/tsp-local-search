@@ -187,7 +187,7 @@ std::tuple<int*, int> Solver::random_walk(Instance *instance, int running_time, 
     }
     return std::make_tuple(best_solution, c);
 }
-std::tuple<int*, int> Solver::simulated_annealing(Instance *instance, SolutionWriter* solution_writer) {
+std::tuple<int*, int*> Solver::simulated_annealing(Instance *instance, SolutionWriter* solution_writer) {
     std::srand(std::time(nullptr)); //idk if its ok for a coin toss, ctime is simpler so faster??
     mt19937 rng = get_rng();
     int n = instance->get_size()-1;
@@ -257,14 +257,17 @@ std::tuple<int*, int> Solver::simulated_annealing(Instance *instance, SolutionWr
         iteration += L;
 
     }
-    return std::make_tuple(solution, c);
+    int* out = new int[2];
+    out[0] = c;
+    out[1] = c;
+    return make_tuple(best_solution, out);
 }
 
 
 std::tuple<int*, int> Solver::steepest(Instance *instance,SolutionWriter* solution_writer) {
     mt19937 rng = get_rng();
     int* solution = shuffle(instance->get_size(), rng);
-    solution_writer->append_solution(solution,0,"initial_solution",true,0);
+//    solution_writer->append_solution(solution,0,"initial_solution",true,0);
     int** matrix = instance->get_matrix();
     int current_best[4];
     int c = 0;
@@ -309,7 +312,7 @@ std::tuple<int*, int> Solver::steepest(Instance *instance,SolutionWriter* soluti
 std::tuple<int*, int> Solver::greedy(Instance *instance, SolutionWriter* solution_writer) {
     mt19937 rng = get_rng();
     int* solution = shuffle(instance->get_size(), rng);
-    solution_writer->append_solution(solution,0,"initial_solution",true, 0);
+//    solution_writer->append_solution(solution,0,"initial_solution",true, 0);
     int** matrix = instance->get_matrix();
     size_t total_count = (instance->get_size()*(instance->get_size()-1)
                               + instance->get_size()*(instance->get_size()-3)) / 2;
@@ -398,7 +401,7 @@ std::tuple<int*, int> Solver::nearest_neighbour(Instance *instance, int start) {
 std::tuple<int*, int> Solver::deterministic_greedy(Instance *instance,SolutionWriter* solution_writer) {
     mt19937 rng = get_rng();
     int* solution = shuffle(instance->get_size(), rng);
-    solution_writer->append_solution(solution,0,"initial_solution",true, 0);
+//    solution_writer->append_solution(solution,0,"initial_solution",true, 0);
     int** matrix = instance->get_matrix();
     int current_best[4];
     int c = 0;
@@ -448,7 +451,7 @@ std::tuple<int*, int> Solver::deterministic_greedy(Instance *instance,SolutionWr
 std::tuple<int*, int> Solver::deterministic_greedy_2(Instance *instance, SolutionWriter *solution_writer) {
     mt19937 rng = get_rng();
     int* solution = shuffle(instance->get_size(), rng);
-    solution_writer->append_solution(solution,0,"initial_solution",true, 0);
+//    solution_writer->append_solution(solution,0,"initial_solution",true, 0);
     int** matrix = instance->get_matrix();
     size_t total_count = (instance->get_size()*(instance->get_size()-1)
                           + instance->get_size()*(instance->get_size()-3)) / 2;
@@ -505,7 +508,7 @@ std::tuple<int*, int> Solver::deterministic_greedy_2(Instance *instance, Solutio
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-std::tuple<int*, int> Solver::tabu_search(Instance* instance, SolutionWriter* solution_writer) {
+std::tuple<int*, int*> Solver::tabu_search(Instance* instance, SolutionWriter* solution_writer) {
     mt19937 rng = get_rng();
     // Initialize the solution and its evaluation
     int* solution = shuffle(instance->get_size(), rng);
@@ -818,6 +821,9 @@ std::tuple<int*, int> Solver::tabu_search(Instance* instance, SolutionWriter* so
             visited += NEIGHBORHOOD_SIZE;
         }
     }
-    cout << "evaluated solutions: " << visited << endl;
-    return make_tuple(best_solution, c);
+//    cout << "evaluated solutions: " << visited << endl;
+    int* out = new int[2];
+    out[0] = c;
+    out[1] = visited;
+    return make_tuple(best_solution, out);
 }

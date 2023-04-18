@@ -31,15 +31,18 @@ int main() {
     3413.25,
     63.45};
     int number_of_runs = 200;
-    string data_dir = "/Users/maciej.filanowicz/tsp-local-search/data/";
-    string destination_dir =  "/Users/maciej.filanowicz/tsp-local-search/predictions3/";
+//    string data_dir = "/Users/maciej.filanowicz/tsp-local-search/data/";
+//    string destination_dir =  "/Users/maciej.filanowicz/tsp-local-search/predictions3/";
+    string data_dir = "/home/mikikrus/CLionProjects/tsp-local-search/data/";
+    string destination_dir =  "/home/mikikrus/CLionProjects/tsp-local-search/predictions/";
+
 
     for (int i = 0; i < 8; i++) {
         cout << "Instance: " << instance_names[i] << endl;
         auto *instance = new Instance(data_dir + std::string(instance_names[i]), true);
         auto *solution_writer = new SolutionWriter(instance,data_dir, destination_dir,"tabu_search", number_of_runs);
         for (int j =0; j < number_of_runs; j++) {
-            int iterations;
+            int* iterations;
             int* solution;
             auto startTime = std::chrono::steady_clock::now();
 //            std::tie(solution, iterations) = Solver::greedy(instance,solution_writer);
@@ -51,7 +54,7 @@ int main() {
 //            std::tie(solution, iterations) = Solver::nearest_neighbour(instance,i);
             auto endTime = std::chrono::steady_clock::now();
             auto elapsedTime = std::chrono::duration_cast<std::chrono::microseconds >(endTime - startTime).count();
-            solution_writer->append_solution(solution,elapsedTime,"final_order", false,iterations);
+            solution_writer->append_solution(solution,elapsedTime,"final_order", false,iterations[0], iterations[1]);
         }
         solution_writer->print_summary();
         solution_writer->write_solution();

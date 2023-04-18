@@ -13,6 +13,7 @@ SolutionWriter::SolutionWriter(Instance* instance,const string& data_dir, const 
     this->time_table = new long long[this->number_of_runs];
     this->run_names = new string[this->number_of_runs];
     this->number_of_iterations = new long long[this->number_of_runs];
+    this->visited_solutions = new long long[this->number_of_runs];
     this->optimal_solution = get_optimal_solution(data_dir+instance->name+".opt.tour");
 }
 
@@ -43,13 +44,14 @@ int* SolutionWriter::get_optimal_solution(string optimal_solution_path)
     file.close();
     return solution;
 }
-void SolutionWriter::append_solution(int* solution, long long elapsed_time, string run_name,bool initial_solution, long long n_iterations){
+void SolutionWriter::append_solution(int* solution, long long elapsed_time, string run_name,bool initial_solution, long long n_iterations, int visited_solutions){
     for (int i = 0; i < this->instance->get_size(); i++) {
 
         this->calculated_solutions[i][this->number_of_appended_solutions] = solution[i];
     }
     this->time_table[this->number_of_appended_solutions] = elapsed_time;
     this->number_of_iterations[this->number_of_appended_solutions] = n_iterations;
+    this->visited_solutions[this->number_of_appended_solutions] = visited_solutions;
     string run_id;
     if (!initial_solution) {
        run_id = std::to_string(this->number_of_appended_solutions-1);
@@ -66,7 +68,7 @@ void SolutionWriter::write_solution()
     cout<<this->destination_filename<<endl;
     cout<< instance->get_size()<<endl;
     file.open(this->destination_filename);
-    string optimal_node, node, node_index, elapsed_time, x_coord, y_coord, n_iterations;
+    string optimal_node, node, node_index, elapsed_time, x_coord, y_coord, n_iterations, n_visited;
     string file_header = "node_index,x_coord,y_corr,optimal_order,";
     for (int i = 0; i < this->number_of_appended_solutions; i++) {
         file_header += this->run_names[i] + ",";
@@ -88,9 +90,11 @@ void SolutionWriter::write_solution()
     for (int j = 0; j < this->number_of_appended_solutions; j++) {
         elapsed_time += std::to_string(this->time_table[j]) + ",";
         n_iterations += std::to_string(this->number_of_iterations[j]) + ",";
+        n_visited += std::to_string(this->visited_solutions[j]) + ",";
     }
     file << "time [ms],,,," + elapsed_time << endl;
     file << "iterations,,,," + n_iterations << endl;
+    file << "visited,,,," + n_visited << endl;
     file.close();
 }
 void SolutionWriter::print_summary()
