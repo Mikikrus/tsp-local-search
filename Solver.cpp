@@ -188,7 +188,7 @@ std::tuple<int*, int> Solver::random_walk(Instance *instance, int running_time, 
     return std::make_tuple(best_solution, c);
 }
 std::tuple<int*, int*> Solver::simulated_annealing(Instance *instance, SolutionWriter* solution_writer) {
-    std::srand(std::time(nullptr)); //idk if its ok for a coin toss, ctime is simpler so faster??
+    std::srand(std::time(nullptr));
     mt19937 rng = get_rng();
     int n = instance->get_size()-1;
     int* solution = shuffle(instance->get_size(), rng);
@@ -260,7 +260,7 @@ std::tuple<int*, int*> Solver::simulated_annealing(Instance *instance, SolutionW
     int* out = new int[2];
     out[0] = c;
     out[1] = c;
-    return make_tuple(best_solution, out);
+    return make_tuple(solution, out);
 }
 
 
@@ -301,10 +301,6 @@ std::tuple<int*, int> Solver::steepest(Instance *instance,SolutionWriter* soluti
                 std::reverse(solution + current_best[1], solution + current_best[2]); //TODO: write our own
             }
         }
-//        for(auto i : current_best) cout << i << " ";
-//        cout << cost(solution, matrix, instance->get_size()) - old_cost << "\t\t";
-//        for(int x=0; x<instance->get_size(); x++) cout << solution[x] << "->";
-//        cout << endl;
     } while (current_best[0] > 0);
     return std::make_tuple(solution, c);
 }
